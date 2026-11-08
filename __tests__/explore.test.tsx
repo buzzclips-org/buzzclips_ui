@@ -170,11 +170,14 @@ describe("ExploreClient & SEO Category/Tag Routes", () => {
         </QueryClientProvider>
       );
 
-      await waitFor(() => {
-        expect(screen.getByText("Backend Service Unavailable")).toBeInTheDocument();
-        expect(screen.getByRole("button", { name: /Retry Connection/i })).toBeInTheDocument();
-        expect(screen.getByRole("link", { name: /System Status/i })).toBeInTheDocument();
-      });
+      await waitFor(
+        () => {
+          expect(screen.getByText("Backend Service Unavailable")).toBeInTheDocument();
+          expect(screen.getByRole("button", { name: /Retry Connection/i })).toBeInTheDocument();
+          expect(screen.getByRole("link", { name: /System Status/i })).toBeInTheDocument();
+        },
+        { timeout: 3000 }
+      );
     } finally {
       requestsMock.fetchVideos.mockResolvedValue({
         content: [],

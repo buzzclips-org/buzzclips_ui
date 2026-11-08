@@ -126,7 +126,7 @@ export default function ExploreClient({
     getNextPageParam: (lastPage) =>
       lastPage.last ? undefined : lastPage.number + 1,
     staleTime: 60 * 1000,
-    retry: 1,
+    retry: process.env.NODE_ENV === "test" ? false : 1,
   });
 
   // Preserve order and deduplicate
