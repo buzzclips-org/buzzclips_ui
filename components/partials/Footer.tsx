@@ -2,22 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Github, Linkedin, GitCommit } from "lucide-react";
+import { GitCommit } from "lucide-react";
 import { LanguageSwitcher } from "@/components/partials/LanguageSwitcher";
 import { useLanguage } from "@/store/language-context";
-
-const creators = [
-  {
-    name: "Ayushmaan Aggarwal",
-    linkedin: "https://www.linkedin.com/in/ayushmaan9/",
-    github: "https://github.com/Mist-AA",
-  },
-  {
-    name: "Rajit Kuthiala",
-    linkedin: "https://linkedin.com/in/rajitkuthiala",
-    github: "https://github.com/rajitk13",
-  },
-];
 
 let fallbackBuildInfo: { commitSha?: string; buildNumber?: string } = {};
 try {
@@ -50,7 +37,7 @@ export function Footer() {
     <footer className="w-full border-t mt-auto bg-background/80 backdrop-blur-sm text-muted-foreground pb-16 sm:pb-0">
       <div className="container mx-auto px-4 py-6 sm:py-8">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 sm:gap-8 text-sm">
-          {/* Brand & Creators Column */}
+          {/* Brand & About Column */}
           <div className="md:col-span-5 space-y-4">
             <div>
               <h3 className="text-base sm:text-lg font-bold text-foreground tracking-tight">
@@ -59,43 +46,6 @@ export function Footer() {
               <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 leading-relaxed max-w-sm">
                 {t("footer.tagline")}
               </p>
-            </div>
-
-            {/* Creators - Compact inline cards */}
-            <div className="space-y-2">
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-foreground/80">
-                {t("footer.creatorsTitle")}
-              </h4>
-              <div className="flex flex-wrap sm:flex-col gap-2">
-                {creators.map((creator) => (
-                  <div
-                    key={creator.name}
-                    className="inline-flex items-center gap-3 px-3 py-1.5 rounded-lg bg-muted/40 border border-border/40 text-xs"
-                  >
-                    <span className="font-medium text-foreground">
-                      {creator.name}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <Link
-                        href={creator.linkedin}
-                        target="_blank"
-                        aria-label={`${creator.name} on LinkedIn`}
-                        className="text-muted-foreground hover:text-blue-500 transition-colors"
-                      >
-                        <Linkedin className="w-3.5 h-3.5" />
-                      </Link>
-                      <Link
-                        href={creator.github}
-                        target="_blank"
-                        aria-label={`${creator.name} on GitHub`}
-                        className="text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        <Github className="w-3.5 h-3.5" />
-                      </Link>
-                    </div>
-                  </div>
-                ))}
-              </div>
             </div>
           </div>
 

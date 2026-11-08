@@ -3,12 +3,12 @@ import { render, screen } from "@testing-library/react";
 import { Footer } from "@/components/partials/Footer";
 
 describe("Footer Component", () => {
-  it("renders about description, creators, and quick links", () => {
+  it("renders about description and quick links without developer names", () => {
     render(<Footer />);
 
     expect(screen.getByText(/About \| BuzzClips/i)).toBeInTheDocument();
-    expect(screen.getByText("Ayushmaan Aggarwal")).toBeInTheDocument();
-    expect(screen.getByText("Rajit Kuthiala")).toBeInTheDocument();
+    expect(screen.queryByText("Ayushmaan Aggarwal")).not.toBeInTheDocument();
+    expect(screen.queryByText("Rajit Kuthiala")).not.toBeInTheDocument();
     expect(screen.getByText("Tech Stack")).toBeInTheDocument();
     expect(screen.getByText("Contribute")).toBeInTheDocument();
     expect(screen.getByText("System Status")).toBeInTheDocument();

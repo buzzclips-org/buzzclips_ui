@@ -177,7 +177,6 @@ export function generateOrganizationSchema(siteUrl: string = SITE_URL) {
     ],
     sameAs: [
       "https://github.com/bideo-org/bideo_ui",
-      "https://linkedin.com/in/rajitkuthiala",
     ],
   };
 }
