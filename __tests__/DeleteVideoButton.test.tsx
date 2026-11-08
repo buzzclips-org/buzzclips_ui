@@ -92,7 +92,7 @@ describe("DeleteVideoButton Component", () => {
     });
   });
 
-  it("requires typing the video title before enabling delete button", async () => {
+  it("enables delete button when typing 'delete' or clicking auto-fill", async () => {
     (useAuth as jest.Mock).mockReturnValue({
       user: { userId: "user-123" },
       token: "token-abc",
@@ -104,18 +104,18 @@ describe("DeleteVideoButton Component", () => {
     fireEvent.click(screen.getByRole("button", { name: /delete video/i }));
 
     const confirmButton = screen.getByRole("button", { name: "Delete Video" });
-    // Button is disabled until matching title is typed
+    // Button is disabled until confirmed
     expect(confirmButton).toBeDisabled();
 
-    const input = screen.getByPlaceholderText(/Type "Epic Gaming Highlights" to confirm/i);
+    const input = screen.getByPlaceholderText(/Type "delete" to confirm/i);
     expect(input).toBeInTheDocument();
 
-    // Type wrong title
-    fireEvent.change(input, { target: { value: "Wrong Title" } });
+    // Type wrong string
+    fireEvent.change(input, { target: { value: "Wrong Input" } });
     expect(confirmButton).toBeDisabled();
 
-    // Type matching title
-    fireEvent.change(input, { target: { value: "Epic Gaming Highlights" } });
+    // Type "delete"
+    fireEvent.change(input, { target: { value: "delete" } });
     expect(confirmButton).not.toBeDisabled();
 
     fireEvent.click(confirmButton);
@@ -126,7 +126,73 @@ describe("DeleteVideoButton Component", () => {
     expect(toast.success).toHaveBeenCalledWith(MESSAGES.DELETED_SUCCESS);
   });
 
-  it("submits deletion when pressing Enter in input with matching title", async () => {
+  it("enables delete button when clicking checkbox without typing", async () => {
+    (useAuth as jest.Mock).mockReturnValue({
+      user: { userId: "user-123" },
+      token: "token-abc",
+    });
+    (deleteVideo as jest.Mock).mockResolvedValue("Deleted");
+
+    render(<DeleteVideoButton videoId={42} videoTitle="Epic Gaming Highlights" />);
+
+    fireEvent.click(screen.getByRole("button", { name: /delete video/i }));
+
+    const confirmButton = screen.getByRole("button", { name: "Delete Video" });
+    expect(confirmButton).toBeDisabled();
+
+    const checkbox = screen.getByRole("checkbox");
+    fireEvent.click(checkbox);
+    expect(confirmButton).not.toBeDisabled();
+
+    fireEvent.click(confirmButton);
+
+    await waitFor(() => {
+      expect(deleteVideo).toHaveBeenCalledWith("user-123", 42, "token-abc");
+    });
+    expect(toast.success).toHaveBeenCalledWith(MESSAGES.DELETED_SUCCESS);
+  });
+
+  it("enables delete button via auto-fill button", async () => {
+    (useAuth as jest.Mock).mockReturnValue({
+      user: { userId: "user-123" },
+      token: "token-abc",
+    });
+
+    render(<DeleteVideoButton videoId={42} videoTitle="Epic Gaming Highlights" />);
+
+    fireEvent.click(screen.getByRole("button", { name: /delete video/i }));
+
+    const confirmButton = screen.getByRole("button", { name: "Delete Video" });
+    expect(confirmButton).toBeDisabled();
+
+    const autoFillBtn = screen.getByRole("button", { name: /auto-fill "delete"/i });
+    fireEvent.click(autoFillBtn);
+
+    expect(confirmButton).not.toBeDisabled();
+    const input = screen.getByPlaceholderText(/Type "delete" to confirm/i) as HTMLInputElement;
+    expect(input.value).toBe("delete");
+  });
+
+  it("accepts typing the video title for confirmation", async () => {
+    (useAuth as jest.Mock).mockReturnValue({
+      user: { userId: "user-123" },
+      token: "token-abc",
+    });
+    (deleteVideo as jest.Mock).mockResolvedValue("Deleted");
+
+    render(<DeleteVideoButton videoId={42} videoTitle="Epic Gaming Highlights" />);
+
+    fireEvent.click(screen.getByRole("button", { name: /delete video/i }));
+
+    const confirmButton = screen.getByRole("button", { name: "Delete Video" });
+    const input = screen.getByPlaceholderText(/Type "delete" to confirm/i);
+
+    // Type matching title
+    fireEvent.change(input, { target: { value: "Epic Gaming Highlights" } });
+    expect(confirmButton).not.toBeDisabled();
+  });
+
+  it("submits deletion when pressing Enter in input with 'delete'", async () => {
     (useAuth as jest.Mock).mockReturnValue({
       user: { userId: "user-123" },
       token: "token-abc",
@@ -137,10 +203,10 @@ describe("DeleteVideoButton Component", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /delete video/i }));
 
-    const input = screen.getByPlaceholderText(/Type "My Drone Video" to confirm/i);
+    const input = screen.getByPlaceholderText(/Type "delete" to confirm/i);
 
-    // Type title and hit Enter
-    fireEvent.change(input, { target: { value: "my drone video" } });
+    // Type delete and hit Enter
+    fireEvent.change(input, { target: { value: "delete" } });
     fireEvent.keyDown(input, { key: "Enter" });
 
     await waitFor(() => {
