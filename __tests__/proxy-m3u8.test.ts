@@ -59,7 +59,7 @@ describe("Proxy M3U8 Route Handler", () => {
     expect(text).not.toMatch(/^360p\.m3u8$/m);
   });
 
-  it("rewrites relative .ts segments in rendition playlist to /proxy/proxy-m3u8-segment URLs", async () => {
+  it("resolves relative .ts segments directly to AWS S3 without proxying through SSR", async () => {
     const renditionPlaylist = `#EXTM3U
 #EXT-X-VERSION:3
 #EXT-X-TARGETDURATION:6
@@ -82,12 +82,36 @@ describe("Proxy M3U8 Route Handler", () => {
 
     expect(res.status).toBe(200);
     const text = await res.text();
-    expect(text).toContain(
-      `/proxy/proxy-m3u8-segment?url=${encodeURIComponent("https://s3.amazonaws.com/bucket/video_hls_123/360p_000.ts")}`
-    );
-    expect(text).toContain(
-      `/proxy/proxy-m3u8-segment?url=${encodeURIComponent("https://s3.amazonaws.com/bucket/video_hls_123/360p_001.ts")}`
-    );
+    // Directly hits AWS S3 URL - zero proxying through SSR
+    expect(text).toContain("https://s3.amazonaws.com/bucket/video_hls_123/360p_000.ts");
+    expect(text).toContain("https://s3.amazonaws.com/bucket/video_hls_123/360p_001.ts");
+    expect(text).not.toContain("/proxy/proxy-m3u8-segment");
     expect(text).not.toMatch(/^360p_000\.ts$/m);
+  });
+
+  it("rewrites relative .ts segments in external non-CORS stream to /proxy/proxy-m3u8-segment URLs", async () => {
+    const renditionPlaylist = `#EXTM3U
+#EXT-X-VERSION:3
+#EXT-X-TARGETDURATION:6
+#EXTINF:5.000000,
+live_chunk_001.ts
+#EXT-X-ENDLIST
+`;
+
+    global.fetch = jest.fn().mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      text: async () => renditionPlaylist,
+    });
+
+    const targetUrl = "https://restricted-external-cdn.org/live/stream.m3u8";
+    const req = new NextRequest(`https://buzzclips.app/proxy/proxy-m3u8?url=${encodeURIComponent(targetUrl)}`);
+    const res = await proxyM3u8Handler(req);
+
+    expect(res.status).toBe(200);
+    const text = await res.text();
+    expect(text).toContain(
+      `/proxy/proxy-m3u8-segment?url=${encodeURIComponent("https://restricted-external-cdn.org/live/live_chunk_001.ts")}`
+    );
   });
 });

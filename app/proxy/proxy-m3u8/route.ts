@@ -107,6 +107,18 @@ export async function GET(req: NextRequest) {
         if (trimmed.startsWith("#EXT-X-MAP:") && trimmed.includes('URI="')) {
           return trimmed.replace(/URI="([^"]+)"/, (_, match) => {
             const absolute = resolveUrl(match);
+            try {
+              const mapHost = new URL(absolute).hostname.toLowerCase();
+              if (
+                mapHost.includes("amazonaws.com") ||
+                mapHost.endsWith(".buzzclips.app") ||
+                mapHost.endsWith(".bideo.tech")
+              ) {
+                return `URI="${absolute}"`;
+              }
+            } catch {
+              // fallback
+            }
             return `URI="/proxy/proxy-m3u8-segment?url=${encodeURIComponent(absolute)}"`;
           });
         }
@@ -123,7 +135,22 @@ export async function GET(req: NextRequest) {
         return `/proxy/proxy-m3u8?url=${encodeURIComponent(absoluteUrl)}`;
       }
 
-      // Media segment (.ts, .m4s, .mp4, etc.)
+      // Media segment: if chunk is already hosted on AWS S3 or direct BuzzClips domain,
+      // hit AWS directly without routing through the Next.js SSR proxy!
+      try {
+        const segHost = new URL(absoluteUrl).hostname.toLowerCase();
+        if (
+          segHost.includes("amazonaws.com") ||
+          segHost.endsWith(".buzzclips.app") ||
+          segHost.endsWith(".bideo.tech")
+        ) {
+          return absoluteUrl;
+        }
+      } catch {
+        // fallback
+      }
+
+      // Media segment (.ts, .m4s, .mp4, etc.) for non-CORS external streams
       return `/proxy/proxy-m3u8-segment?url=${encodeURIComponent(absoluteUrl)}`;
     });
 

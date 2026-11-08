@@ -92,9 +92,31 @@ export function ReelItem({ video, isActive, isMuted, onToggleMute }: ReelItemPro
     setLastTap(now);
   };
 
-  const videoSrc = video.m3u8Url
-    ? `/proxy/proxy-m3u8?url=${encodeURIComponent(video.m3u8Url)}`
-    : "";
+  const videoSrc = React.useMemo(() => {
+    if (!video.m3u8Url) return "";
+    const raw = video.m3u8Url;
+    if (raw.startsWith("/proxy")) return raw;
+    if (raw.startsWith("/") && !raw.startsWith("//")) return raw;
+
+    try {
+      const parsed = new URL(raw);
+      const host = parsed.hostname.toLowerCase();
+      // Direct streaming for AWS S3, BuzzClips domains, and local dev
+      if (
+        host === "localhost" ||
+        host === "127.0.0.1" ||
+        host.endsWith(".buzzclips.app") ||
+        host.endsWith(".bideo.tech") ||
+        host.includes("amazonaws.com")
+      ) {
+        return raw;
+      }
+    } catch {
+      // fallback
+    }
+
+    return `/proxy/proxy-m3u8?url=${encodeURIComponent(raw)}`;
+  }, [video.m3u8Url]);
 
   return (
     <div

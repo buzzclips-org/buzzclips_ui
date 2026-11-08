@@ -131,12 +131,13 @@ export const VideoPlayer = forwardRef<any, VideoPlayerProps>(
       try {
         const parsed = new URL(src);
         const host = parsed.hostname.toLowerCase();
-        // Same-origin or known CORS-enabled BuzzClips domains stream directly
+        // Same-origin, direct AWS S3, or known CORS-enabled BuzzClips domains stream directly
         if (
           host === "localhost" ||
           host === "127.0.0.1" ||
           host.endsWith(".buzzclips.app") ||
-          host.endsWith(".bideo.tech")
+          host.endsWith(".bideo.tech") ||
+          host.includes("amazonaws.com")
         ) {
           return src;
         }
