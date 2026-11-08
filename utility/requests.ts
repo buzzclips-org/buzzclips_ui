@@ -18,6 +18,12 @@ import {
   CompletePresignedUploadDTO,
   TranscodeProgress,
 } from "@/types/video";
+import { sanitizeMediaUrls } from "@/utility/s3";
+
+async function parseJson<T = any>(res: Response): Promise<T> {
+  const json = await res.json();
+  return sanitizeMediaUrls(json);
+}
 
 export * from "@/types/video";
 
@@ -108,7 +114,7 @@ export const checkUsernameAvailability = async (
     const text = await res.text();
     throw new Error(`Username check failed with status ${res.status}: ${text}`);
   }
-  return res.json();
+  return parseJson(res);
 };
 
 export const searchUsers = async (
@@ -120,7 +126,7 @@ export const searchUsers = async (
       `${api_instance}/user/search?q=${encodeURIComponent(query)}&limit=${limit}`
     );
     if (!res.ok) return [];
-    return res.json();
+    return parseJson(res);
   } catch {
     return [];
   }
@@ -138,7 +144,7 @@ export const verifyToken = async (idToken: string): Promise<{ id: string }> => {
     throw new Error(`Token verification failed: ${error}`);
   }
 
-  return res.json(); // { id: 'uid123' }
+  return parseJson(res); // { id: 'uid123' }
 };
 
 export const loginUser = async (
@@ -261,7 +267,7 @@ export const getVideoData = async (
     throw new Error(`Failed to Load Video: ${res.status} - ${text}`);
   }
 
-  return res.json();
+  return parseJson(res);
 };
 
 export const getUser = async (uid: string, token: string): Promise<User> => {
@@ -276,7 +282,7 @@ export const getUser = async (uid: string, token: string): Promise<User> => {
     throw new Error(`Get user failed: ${res.status} - ${text}`);
   }
 
-  return res.json();
+  return parseJson(res);
 };
 
 export const updateUser = async (data: User, token: string): Promise<void> => {
@@ -351,7 +357,7 @@ export const fetchVideos = async (page: number) => {
     throw new Error(`Fetch videos failed: ${res.status}`);
   }
 
-  return res.json();
+  return parseJson(res);
 };
 
 export async function fetchUserVideos(
@@ -369,7 +375,7 @@ export async function fetchUserVideos(
     }
   );
   if (!res.ok) throw new Error("Failed to fetch user videos");
-  return res.json();
+  return parseJson(res);
 }
 
 export async function deleteVideo(
@@ -405,7 +411,7 @@ export const getVideoBySlug = cache(async (slug: string): Promise<VideoDTO> => {
     const text = await res.text();
     throw new Error(`Failed to load video by slug: ${res.status} - ${text}`);
   }
-  return res.json();
+  return parseJson(res);
 });
 
 export const getVideoById = cache(async (id: string | number): Promise<VideoDTO> => {
@@ -416,7 +422,7 @@ export const getVideoById = cache(async (id: string | number): Promise<VideoDTO>
     const text = await res.text();
     throw new Error(`Failed to load video: ${res.status} - ${text}`);
   }
-  return res.json();
+  return parseJson(res);
 });
 
 export const updateVideoMetadata = async (
@@ -442,7 +448,7 @@ export const updateVideoMetadata = async (
     throw new Error(`Failed to update video metadata: ${res.status} - ${text}`);
   }
 
-  return res.json();
+  return parseJson(res);
 };
 
 export interface SearchVideosParams {
@@ -523,7 +529,7 @@ export const searchVideos = async (
     throw new Error(`Search videos failed: ${res.status}`);
   }
 
-  return res.json();
+  return parseJson(res);
 };
 
 export const getPublicUser = async (
@@ -537,7 +543,7 @@ export const getPublicUser = async (
       }
     );
     if (!res.ok) return null;
-    return res.json();
+    return parseJson(res);
   } catch {
     return null;
   }
@@ -556,7 +562,7 @@ export const getPublicUserVideos = async (
       }
     );
     if (!res.ok) return null;
-    return res.json();
+    return parseJson(res);
   } catch {
     return null;
   }
@@ -589,7 +595,7 @@ export const fetchSystemHealth = async (): Promise<SystemHealthResponse> => {
   if (!res.ok) {
     throw new Error(`Health check returned HTTP ${res.status}`);
   }
-  return res.json();
+  return parseJson(res);
 };
 
 export const recordVideoView = async (
@@ -625,7 +631,7 @@ export const fetchRelatedVideos = async (
   if (!res.ok) {
     throw new Error(`Failed to fetch related videos: ${res.status}`);
   }
-  return res.json();
+  return parseJson(res);
 };
 
 export const fetchTrendingVideos = async (
@@ -641,7 +647,7 @@ export const fetchTrendingVideos = async (
   if (!res.ok) {
     throw new Error(`Failed to fetch trending videos: ${res.status}`);
   }
-  return res.json();
+  return parseJson(res);
 };
 
 export const fetchSearchSuggestions = async (
@@ -654,7 +660,7 @@ export const fetchSearchSuggestions = async (
       `${api_instance}/vid/search/suggest?q=${encodeURIComponent(query.trim())}&limit=${limit}`
     );
     if (!res.ok) return [];
-    return res.json();
+    return parseJson(res);
   } catch {
     return [];
   }
@@ -682,7 +688,7 @@ export const getSubscriptionStatus = async (
   if (!res.ok) {
     return { channelUserId: channelId, subscriberCount: 0, isSubscribed: false, subscribed: false };
   }
-  return res.json();
+  return parseJson(res);
 };
 
 export const toggleSubscribe = async (
@@ -702,7 +708,7 @@ export const toggleSubscribe = async (
     const text = await res.text();
     throw new Error(`Toggle subscribe failed: ${res.status} - ${text}`);
   }
-  return res.json();
+  return parseJson(res);
 };
 
 export const getSubscriberCount = async (
@@ -715,7 +721,7 @@ export const getSubscriberCount = async (
   if (!res.ok) {
     return { channelId, subscriberCount: 0 };
   }
-  return res.json();
+  return parseJson(res);
 };
 
 // ==========================================
@@ -757,7 +763,7 @@ export const recordWatchProgress = async (
     );
 
     if (!res.ok) return null;
-    return res.json();
+    return parseJson(res);
   } catch {
     return null;
   }
@@ -777,7 +783,7 @@ export const fetchWatchProgress = async (
       cache: "no-store",
     });
     if (!res.ok) return null;
-    return res.json();
+    return parseJson(res);
   } catch {
     return null;
   }
@@ -800,7 +806,7 @@ export const fetchUserWatchHistory = async (
   if (!res.ok) {
     throw new Error(`Failed to fetch watch history: ${res.status}`);
   }
-  return res.json();
+  return parseJson(res);
 };
 
 export const deleteWatchHistoryItem = async (
@@ -844,7 +850,7 @@ export const fetchMyPlaylists = async (token: string): Promise<PlaylistDTO[]> =>
   if (!res.ok) {
     throw new Error(`Failed to fetch playlists: ${res.status}`);
   }
-  return res.json();
+  return parseJson(res);
 };
 
 export const fetchPlaylistDetails = async (
@@ -862,7 +868,7 @@ export const fetchPlaylistDetails = async (
   if (!res.ok) {
     throw new Error(`Failed to fetch playlist details: ${res.status}`);
   }
-  return res.json();
+  return parseJson(res);
 };
 
 export const createPlaylist = async (
@@ -880,7 +886,7 @@ export const createPlaylist = async (
   if (!res.ok) {
     throw new Error(`Failed to create playlist: ${res.status}`);
   }
-  return res.json();
+  return parseJson(res);
 };
 
 export const addVideoToPlaylist = async (
@@ -900,7 +906,7 @@ export const addVideoToPlaylist = async (
   if (!res.ok) {
     throw new Error(`Failed to add video to playlist: ${res.status}`);
   }
-  return res.json();
+  return parseJson(res);
 };
 
 export const removeVideoFromPlaylist = async (
@@ -920,7 +926,7 @@ export const removeVideoFromPlaylist = async (
   if (!res.ok) {
     throw new Error(`Failed to remove video from playlist: ${res.status}`);
   }
-  return res.json();
+  return parseJson(res);
 };
 
 export const deletePlaylist = async (
@@ -954,7 +960,7 @@ export const toggleWatchLater = async (
   if (!res.ok) {
     throw new Error(`Failed to toggle watch later: ${res.status}`);
   }
-  return res.json();
+  return parseJson(res);
 };
 
 // ==========================================
@@ -978,7 +984,7 @@ export const requestPresignedUpload = async (
     const text = await res.text();
     throw new Error(`Presigned upload request failed: ${res.status} - ${text}`);
   }
-  return res.json();
+  return parseJson(res);
 };
 
 export const completePresignedUpload = async (
@@ -997,7 +1003,7 @@ export const completePresignedUpload = async (
     const text = await res.text();
     throw new Error(`Complete presigned upload failed: ${res.status} - ${text}`);
   }
-  return res.json();
+  return parseJson(res);
 };
 
 export const abortPresignedUpload = async (

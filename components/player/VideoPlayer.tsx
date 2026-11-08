@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import clsx from "clsx";
+import { normalizeS3Url } from "@/utility/s3";
 
 export interface VideoPlayerProps {
   src: string;
@@ -123,13 +124,14 @@ export const VideoPlayer = forwardRef<any, VideoPlayerProps>(
     // Optimized source resolution: only proxy if external cross-origin m3u8
     const proxySrc = React.useMemo(() => {
       if (!src) return "";
-      if (src.startsWith("/proxy")) return src;
+      const normalized = normalizeS3Url(src);
+      if (normalized.startsWith("/proxy")) return normalized;
 
       // Relative URLs never need proxying
-      if (src.startsWith("/") && !src.startsWith("//")) return src;
+      if (normalized.startsWith("/") && !normalized.startsWith("//")) return normalized;
 
       try {
-        const parsed = new URL(src);
+        const parsed = new URL(normalized);
         const host = parsed.hostname.toLowerCase();
         // Same-origin, direct AWS S3, or known CORS-enabled BuzzClips domains stream directly
         if (
@@ -139,14 +141,14 @@ export const VideoPlayer = forwardRef<any, VideoPlayerProps>(
           host.endsWith(".bideo.tech") ||
           host.includes("amazonaws.com")
         ) {
-          return src;
+          return normalized;
         }
       } catch {
         // Not a standard URL, fallback
       }
 
       // External streams (e.g. FTA Live TV without permissive CORS) go through proxy
-      return `/proxy/proxy-m3u8?url=${encodeURIComponent(src)}`;
+      return `/proxy/proxy-m3u8?url=${encodeURIComponent(normalized)}`;
     }, [src]);
 
     // Reset buffering indicator whenever stream source changes
@@ -737,7 +739,7 @@ export const VideoPlayer = forwardRef<any, VideoPlayerProps>(
         {/* Native Video Element */}
         <video
           ref={videoRef}
-          poster={poster}
+          poster={poster ? normalizeS3Url(poster) : undefined}
           playsInline
           onClick={togglePlay}
           onDoubleClick={toggleFullscreen}

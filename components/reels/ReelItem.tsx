@@ -11,6 +11,7 @@ import { ReelCommentsDrawer } from "./ReelCommentsDrawer";
 import { SaveToPlaylistModal } from "@/components/video/SaveToPlaylistModal";
 import { Play, Pause, Heart, Volume2, VolumeX } from "lucide-react";
 import clsx from "clsx";
+import { normalizeS3Url } from "@/utility/s3";
 
 interface ReelItemProps {
   video: VideoDTO;
@@ -94,7 +95,7 @@ export function ReelItem({ video, isActive, isMuted, onToggleMute }: ReelItemPro
 
   const videoSrc = React.useMemo(() => {
     if (!video.m3u8Url) return "";
-    const raw = video.m3u8Url;
+    const raw = normalizeS3Url(video.m3u8Url);
     if (raw.startsWith("/proxy")) return raw;
     if (raw.startsWith("/") && !raw.startsWith("//")) return raw;
 

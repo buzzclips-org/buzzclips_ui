@@ -161,7 +161,17 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
-        hostname: "*.amazonaws.com",
+        hostname: "**.amazonaws.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "s3.ap-southeast-2.amazonaws.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "s3.amazonaws.com",
         pathname: "/**",
       },
       {
