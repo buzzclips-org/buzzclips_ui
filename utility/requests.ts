@@ -588,21 +588,20 @@ export interface SystemHealthResponse {
   };
 }
 
-export const fetchSystemHealth = async (): Promise<SystemHealthResponse> => {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 6000);
-  try {
-    const res = await fetch(`${api_instance}/health`, {
-      cache: "no-store",
-      signal: controller.signal,
-    });
-    if (!res.ok) {
-      throw new Error(`Health check returned HTTP ${res.status}`);
-    }
-    return await parseJson(res);
-  } finally {
-    clearTimeout(timeoutId);
+export const fetchSystemHealth = async (
+  options?: { signal?: AbortSignal }
+): Promise<SystemHealthResponse> => {
+  const fetchOptions: RequestInit = {
+    cache: "no-store",
+  };
+  if (options?.signal) {
+    fetchOptions.signal = options.signal;
   }
+  const res = await fetch(`${api_instance}/health`, fetchOptions);
+  if (!res.ok) {
+    throw new Error(`Health check returned HTTP ${res.status}`);
+  }
+  return parseJson(res);
 };
 
 export const recordVideoView = async (

@@ -87,8 +87,11 @@ export default function StatusPage() {
     if (isManual) setRefreshing(true);
     setError(null);
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
+
     try {
-      const data = await fetchSystemHealth();
+      const data = await fetchSystemHealth({ signal: controller.signal });
       setHealthData(data);
       setLastUpdated(new Date());
       setCountdown(15);
@@ -98,6 +101,7 @@ export default function StatusPage() {
         err instanceof Error ? err.message : "Failed to retrieve health status.";
       setError(errMsg);
     } finally {
+      clearTimeout(timeoutId);
       setLoading(false);
       if (isManual) {
         setTimeout(() => setRefreshing(false), 300);

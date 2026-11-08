@@ -153,7 +153,7 @@ describe("ExploreClient & SEO Category/Tag Routes", () => {
 
   it("renders backend unavailable card when API query fails", async () => {
     const requestsMock = jest.requireMock("@/utility/requests");
-    requestsMock.fetchVideos.mockRejectedValueOnce(new Error("Backend unreachable"));
+    requestsMock.fetchVideos.mockRejectedValue(new Error("Backend unreachable"));
 
     const failingClient = new QueryClient({
       defaultOptions: {
@@ -163,16 +163,27 @@ describe("ExploreClient & SEO Category/Tag Routes", () => {
       },
     });
 
-    render(
-      <QueryClientProvider client={failingClient}>
-        <ExploreClient initialVideos={[]} />
-      </QueryClientProvider>
-    );
+    try {
+      render(
+        <QueryClientProvider client={failingClient}>
+          <ExploreClient initialVideos={[]} />
+        </QueryClientProvider>
+      );
 
-    await waitFor(() => {
-      expect(screen.getByText("Backend Service Unavailable")).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: /Retry Connection/i })).toBeInTheDocument();
-      expect(screen.getByRole("link", { name: /System Status/i })).toBeInTheDocument();
-    });
+      await waitFor(() => {
+        expect(screen.getByText("Backend Service Unavailable")).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: /Retry Connection/i })).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: /System Status/i })).toBeInTheDocument();
+      });
+    } finally {
+      requestsMock.fetchVideos.mockResolvedValue({
+        content: [],
+        last: true,
+        number: 0,
+        totalElements: 0,
+        totalPages: 0,
+        size: 12,
+      });
+    }
   });
 });
