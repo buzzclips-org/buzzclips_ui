@@ -94,6 +94,17 @@ describe("StatusPage Component", () => {
       expect(fetchMock).toHaveBeenCalled();
     });
   });
+
+  it("displays service disruption state when backend is unreachable", async () => {
+    global.fetch = jest.fn().mockRejectedValue(new Error("Network connection refused"));
+
+    render(<StatusPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Service Disruption Ongoing")).toBeInTheDocument();
+      expect(screen.getAllByText("Offline / Disrupted").length).toBeGreaterThan(0);
+    });
+  });
 });
 
 describe("Health & View Tracking Requests", () => {

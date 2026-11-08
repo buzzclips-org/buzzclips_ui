@@ -129,12 +129,12 @@ export default function StatusPage() {
 
   // Aggregate stats
   const aggregateMetrics = useMemo(() => {
-    if (!healthData?.services) {
+    if (error || !healthData?.services) {
       return {
-        operationalCount: 5,
+        operationalCount: 0,
         totalServices: 5,
-        avgLatency: 8,
-        status: "UP" as const,
+        avgLatency: 0,
+        status: "DOWN" as const,
       };
     }
 
@@ -149,7 +149,7 @@ export default function StatusPage() {
         ? Math.round(
             latencies.reduce((sum, curr) => sum + curr, 0) / latencies.length
           )
-        : 6;
+        : 0;
 
     let overallStatus: "UP" | "DEGRADED" | "DOWN" = "UP";
     if (healthData.status) {
@@ -166,7 +166,7 @@ export default function StatusPage() {
       avgLatency: avg,
       status: overallStatus,
     };
-  }, [healthData]);
+  }, [healthData, error]);
 
   const getStatusBadge = (status: string | undefined) => {
     switch (status) {
@@ -197,7 +197,7 @@ export default function StatusPage() {
             className="border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400 flex items-center gap-1 font-medium"
           >
             <XCircle className="w-3.5 h-3.5" />
-            Service Disrupted
+            Offline / Disrupted
           </Badge>
         );
     }
@@ -430,11 +430,15 @@ export default function StatusPage() {
 
         <div className="grid grid-cols-1 gap-3.5">
           {MONITORED_SERVICES.map((serviceConfig) => {
+            const isBackendDown = Boolean(error || !healthData?.services);
             const liveService = healthData?.services?.[serviceConfig.key];
-            const currentStatus = liveService?.status ?? "UP";
-            const latency = liveService?.latencyMs ?? 5;
-            const details =
-              liveService?.details || serviceConfig.defaultDescription;
+            const currentStatus = isBackendDown
+              ? "DOWN"
+              : liveService?.status ?? "DOWN";
+            const latency = isBackendDown ? undefined : liveService?.latencyMs;
+            const details = isBackendDown
+              ? "Service probe unreachable: Backend connection could not be established."
+              : liveService?.details || serviceConfig.defaultDescription;
 
             return (
               <Card

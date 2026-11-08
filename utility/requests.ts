@@ -589,13 +589,20 @@ export interface SystemHealthResponse {
 }
 
 export const fetchSystemHealth = async (): Promise<SystemHealthResponse> => {
-  const res = await fetch(`${api_instance}/health`, {
-    cache: "no-store",
-  });
-  if (!res.ok) {
-    throw new Error(`Health check returned HTTP ${res.status}`);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 6000);
+  try {
+    const res = await fetch(`${api_instance}/health`, {
+      cache: "no-store",
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      throw new Error(`Health check returned HTTP ${res.status}`);
+    }
+    return await parseJson(res);
+  } finally {
+    clearTimeout(timeoutId);
   }
-  return parseJson(res);
 };
 
 export const recordVideoView = async (

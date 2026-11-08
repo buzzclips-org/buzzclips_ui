@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { MESSAGES } from "@/constants/messages";
-import { Search, X, Film, Tag } from "lucide-react";
+import { Search, X, Film, Tag, AlertTriangle, RefreshCw, Activity } from "lucide-react";
+import Link from "next/link";
 import { VideoDTO, PaginatedVideoResponse } from "@/types/video";
 import { motion } from "framer-motion";
 import { useLanguage } from "@/store/language-context";
@@ -93,6 +94,7 @@ export default function ExploreClient({
     isFetchingNextPage,
     isLoading,
     error,
+    refetch,
   } = useInfiniteQuery<
     PaginatedVideoResponse,
     Error,
@@ -391,8 +393,45 @@ export default function ExploreClient({
             ))}
         </motion.div>
 
+        {/* Backend Unavailable Error State */}
+        {error && videoList.length === 0 && (
+          <div className="py-14 px-6 text-center space-y-5 max-w-lg mx-auto bg-destructive/5 border border-destructive/20 rounded-2xl">
+            <div className="w-14 h-14 rounded-2xl bg-destructive/10 text-destructive flex items-center justify-center mx-auto">
+              <AlertTriangle className="w-7 h-7" />
+            </div>
+            <div className="space-y-1.5">
+              <h3 className="font-bold text-xl text-foreground">
+                Backend Service Unavailable
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                We are experiencing difficulty connecting to the BuzzClips API servers. Video feeds are temporarily unreachable.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => refetch()}
+                className="gap-2"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                Retry Connection
+              </Button>
+              <Button variant="outline" size="sm" asChild className="gap-2">
+                <Link href="/status">
+                  <Activity className="w-3.5 h-3.5" />
+                  System Status
+                </Link>
+              </Button>
+              <Button variant="ghost" size="sm" asChild>
+                <Link href="/tv">Watch Live TV</Link>
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Empty Search Results */}
-        {!isLoading && videoList.length === 0 && (
+        {!isLoading && !error && videoList.length === 0 && (
           <div className="py-16 text-center space-y-4">
             <div className="w-14 h-14 rounded-2xl bg-muted/60 flex items-center justify-center mx-auto text-muted-foreground/60 border border-border/50">
               <Film className="w-7 h-7" />

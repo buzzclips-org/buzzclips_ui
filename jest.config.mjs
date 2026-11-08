@@ -33,7 +33,6 @@ const config = {
     "!components/video/SaveToPlaylistModal.tsx",
     "components/partials/**/*.{ts,tsx}",
     "!components/partials/MobileNav.tsx",
-    "!utility/videoAvailability.ts",
     "components/user/ViewProfile.tsx",
     "components/CodeBlock.tsx",
     "components/Loader.tsx",

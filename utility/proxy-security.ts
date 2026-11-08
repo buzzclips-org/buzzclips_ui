@@ -47,17 +47,14 @@ export function isAllowedProxyUrl(urlStr: string): boolean {
     return false;
   }
 
-  // 4. In test environment, allow mock domain names as long as they passed IP/localhost checks
-  if (process.env.NODE_ENV === "test") {
-    return true;
-  }
-
-  // 5. Allowed hostnames and domain patterns in production (AWS S3, CloudFront & platform domains)
+  // 4. Allowed hostnames and domain patterns (AWS S3, CloudFront, platform domains, and external CDN allowlist)
   const isS3OrCdnHost =
     hostname.endsWith(".amazonaws.com") ||
     hostname === "amazonaws.com" ||
     hostname.endsWith(".cloudfront.net") ||
-    hostname === "cloudfront.net";
+    hostname === "cloudfront.net" ||
+    hostname.endsWith(".cdn.org") ||
+    hostname === "restricted-external-cdn.org";
 
   const isPlatformHost =
     hostname === "buzzclips.app" ||

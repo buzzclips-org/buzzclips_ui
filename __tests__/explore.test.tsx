@@ -150,4 +150,29 @@ describe("ExploreClient & SEO Category/Tag Routes", () => {
 
     expect(meta.title).toContain("Category Not Found");
   });
+
+  it("renders backend unavailable card when API query fails", async () => {
+    const requestsMock = jest.requireMock("@/utility/requests");
+    requestsMock.fetchVideos.mockRejectedValueOnce(new Error("Backend unreachable"));
+
+    const failingClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    });
+
+    render(
+      <QueryClientProvider client={failingClient}>
+        <ExploreClient initialVideos={[]} />
+      </QueryClientProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Backend Service Unavailable")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /Retry Connection/i })).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: /System Status/i })).toBeInTheDocument();
+    });
+  });
 });
