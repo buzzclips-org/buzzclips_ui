@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { VideoDTO } from "@/types/video";
+import { serializeJsonLd } from "@/utility/seo";
 
 interface VideoSeoHeadProps {
   video: VideoDTO;
@@ -94,7 +95,7 @@ export const VideoSeoHead: React.FC<VideoSeoHeadProps> = ({ video }) => {
       id="video-schema-jsonld"
       type="application/ld+json"
       dangerouslySetInnerHTML={{
-        __html: JSON.stringify(seo.jsonLdVideoObject),
+        __html: serializeJsonLd(seo.jsonLdVideoObject),
       }}
     />
   );

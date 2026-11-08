@@ -76,7 +76,14 @@ export function GoogleSignInButton({
           : "Signed in with Google successfully!"
       );
 
-      const destination = callbackUrl || "/";
+      const destination = (() => {
+        if (!callbackUrl || typeof callbackUrl !== "string") return "/";
+        const trimmed = callbackUrl.trim();
+        if (trimmed.startsWith("/") && !trimmed.startsWith("//") && !trimmed.startsWith("/\\")) {
+          return trimmed;
+        }
+        return "/";
+      })();
       if (router) {
         router.push(destination);
         router.refresh();

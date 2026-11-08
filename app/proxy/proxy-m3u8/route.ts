@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isAllowedProxyUrl } from "@/utility/proxy-security";
 
 function getAllowedOrigin(req: NextRequest): string {
   const origin = req.headers.get("origin");
@@ -41,19 +42,11 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  // Validate URL protocol
-  try {
-    const parsed = new URL(url);
-    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-      return NextResponse.json(
-        { error: "Invalid protocol" },
-        { status: 400, headers: { "Access-Control-Allow-Origin": allowedOrigin } }
-      );
-    }
-  } catch {
+  // Validate URL protocol and destination to prevent SSRF
+  if (!isAllowedProxyUrl(url)) {
     return NextResponse.json(
-      { error: "Invalid URL" },
-      { status: 400, headers: { "Access-Control-Allow-Origin": allowedOrigin } }
+      { error: "Forbidden: URL destination is not permitted" },
+      { status: 403, headers: { "Access-Control-Allow-Origin": allowedOrigin } }
     );
   }
 

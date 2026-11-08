@@ -14,5 +14,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/profile", "/profile/edit", "/video/upload"],
+  matcher: ["/profile", "/profile/edit", "/video/upload", "/my-videos"],
 };

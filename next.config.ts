@@ -130,6 +130,16 @@ const nextConfig: NextConfig = {
         headers: [
           { key: "Content-Language", value: "en" },
           { key: "Vary", value: "Accept-Language" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+        ],
+      },
+      {
+        // Prevent clickjacking on non-embed application routes while keeping /embed accessible for embeds
+        source: "/((?!embed).*)",
+        headers: [
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
         ],
       },
     ];

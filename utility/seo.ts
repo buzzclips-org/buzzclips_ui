@@ -6,6 +6,17 @@ export const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/+$/, "") || "https://buzzclips.app";
 
 /**
+ * Safely serializes schema data for JSON-LD script tags, escaping '<', '>', and '&'
+ * to Unicode escape sequences to prevent script tag breakout and HTML parser XSS vulnerabilities.
+ */
+export function serializeJsonLd(schema: unknown): string {
+  return JSON.stringify(schema)
+    .replace(/</g, "\\u003c")
+    .replace(/>/g, "\\u003e")
+    .replace(/&/g, "\\u0026");
+}
+
+/**
  * Generates Next.js metadata alternates.languages map for all 12 supported languages + x-default.
  */
 export function generateHreflangAlternates(canonicalUrl: string): Record<string, string> {

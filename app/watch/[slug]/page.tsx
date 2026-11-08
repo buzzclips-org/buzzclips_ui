@@ -7,6 +7,7 @@ import {
   generateVideoJsonLd,
   generateBreadcrumbSchema,
   generateHreflangAlternates,
+  serializeJsonLd,
 } from "@/utility/seo";
 
 export const revalidate = 60; // Incremental Static Regeneration every 60 seconds
@@ -149,7 +150,7 @@ export default async function WatchPage({
           id="server-video-schema-jsonld"
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(jsonLdVideoObject),
+            __html: serializeJsonLd(jsonLdVideoObject),
           }}
         />
       )}
@@ -158,7 +159,7 @@ export default async function WatchPage({
           id="server-breadcrumb-schema-jsonld"
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(breadcrumbSchema),
+            __html: serializeJsonLd(breadcrumbSchema),
           }}
         />
       )}

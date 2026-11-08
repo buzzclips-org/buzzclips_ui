@@ -57,6 +57,13 @@ export async function GET(request: Request) {
     ? `${baseUrl}/profile/${video.video_uploader.userId}`
     : baseUrl;
 
+  const escapedTitle = (video.video_title || "BuzzClips Video")
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+
   const oembedResponse = {
     type: "video",
     version: "1.0",
@@ -70,7 +77,7 @@ export async function GET(request: Request) {
     thumbnail_height: 720,
     width: 1280,
     height: 720,
-    html: `<iframe src="${embedUrl}" width="1280" height="720" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen title="${video.video_title}"></iframe>`,
+    html: `<iframe src="${embedUrl}" width="1280" height="720" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen title="${escapedTitle}"></iframe>`,
   };
 
   return Response.json(oembedResponse, {

@@ -21,6 +21,24 @@ describe("Proxy M3U8 Route Handler", () => {
     expect(body.error).toBe("Missing URL param");
   });
 
+  it("blocks SSRF attempts targeting cloud metadata or loopback IPs with 403", async () => {
+    const maliciousUrls = [
+      "http://169.254.169.254/latest/meta-data/",
+      "http://127.0.0.1:8080/admin",
+      "http://localhost:8080/secret",
+      "http://[::1]:8080/secret",
+      "file:///etc/passwd",
+    ];
+
+    for (const badUrl of maliciousUrls) {
+      const req = new NextRequest(`https://buzzclips.app/proxy/proxy-m3u8?url=${encodeURIComponent(badUrl)}`);
+      const res = await proxyM3u8Handler(req);
+      expect(res.status).toBe(403);
+      const body = await res.json();
+      expect(body.error).toContain("Forbidden");
+    }
+  });
+
   it("rewrites relative .m3u8 sub-playlists in master playlist to /proxy/proxy-m3u8 URLs", async () => {
     const masterPlaylist = `#EXTM3U
 #EXT-X-VERSION:3
