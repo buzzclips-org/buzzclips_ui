@@ -781,20 +781,41 @@ export const VideoPlayer = forwardRef<any, VideoPlayerProps>(
           className="w-full h-full object-contain cursor-pointer"
         />
 
-        {/* Buffering & First Chunk Loading Overlay */}
+        {/* Buffering & Stream Loading Overlay */}
         {isBuffering && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20 transition-opacity duration-300">
-            <div className="flex flex-col items-center gap-3 px-6 py-4 rounded-2xl bg-black/70 backdrop-blur-md border border-white/10 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex flex-col items-center gap-3 px-6 py-4 rounded-2xl bg-black/80 backdrop-blur-md border border-white/10 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
               <div className="relative w-12 h-12 flex items-center justify-center">
-                <div className="absolute inset-0 rounded-full border-2 border-primary/20 animate-ping opacity-30" />
+                <div className="absolute inset-0 rounded-full border-2 border-primary/30 animate-ping opacity-40" />
+                <div className="absolute inset-0 rounded-full border-2 border-primary/10 animate-pulse" />
                 <Loader2 className="w-9 h-9 text-primary animate-spin" />
               </div>
-              <div className="flex flex-col items-center text-center select-none">
-                <span className="text-xs font-semibold text-white tracking-wide">
-                  {isLive ? "Connecting to live stream..." : "Loading video..."}
+              <div className="flex flex-col items-center text-center select-none gap-0.5">
+                <span className="text-xs font-semibold text-white tracking-wide flex items-center gap-1.5">
+                  {isLive ? (
+                    <>
+                      <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                      Connecting to Live Broadcast...
+                    </>
+                  ) : currentTime > 0 ? (
+                    "Buffering..."
+                  ) : (
+                    "Loading video..."
+                  )}
                 </span>
-                <span className="text-[10px] text-zinc-400 mt-0.5">
-                  Waiting for first chunk
+                <span className="text-[11px] text-zinc-400 flex items-center gap-1.5 font-medium">
+                  {isLive ? (
+                    "Syncing real-time feed"
+                  ) : currentTime > 0 ? (
+                    "Optimizing playback buffer"
+                  ) : (
+                    "Preparing high-definition stream"
+                  )}
+                  <span className="inline-flex gap-0.5 ml-0.5">
+                    <span className="w-1 h-1 rounded-full bg-primary/70 animate-bounce [animation-delay:0ms]" />
+                    <span className="w-1 h-1 rounded-full bg-primary/70 animate-bounce [animation-delay:150ms]" />
+                    <span className="w-1 h-1 rounded-full bg-primary/70 animate-bounce [animation-delay:300ms]" />
+                  </span>
                 </span>
               </div>
             </div>
