@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Suspense } from "react";
@@ -192,6 +193,21 @@ export default function RootLayout({
         suppressHydrationWarning
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col relative w-full max-w-full overflow-x-hidden`}
       >
+        <Script
+          strategy="afterInteractive"
+          src="https://www.googletagmanager.com/gtm.js?id=GTM-5D58H2RF"
+        />
+        <Script
+          id="google-tag-manager"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+            `,
+          }}
+        />
         <ThemeProvider>
           <LanguageProvider>
             <ReactQueryProvider>
