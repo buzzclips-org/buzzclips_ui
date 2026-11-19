@@ -20,6 +20,8 @@ export const ar: TranslationDictionary = {
   },
   nav: {
     home: "الرئيسية",
+    editor: "محرر الفيديو",
+    explore: "استكشف",
     reels: "ريلز",
     liveTv: "بث مباشر",
     trending: "شائع الآن",

@@ -5,9 +5,10 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get("token")?.value;
 
   if (!token) {
-    return NextResponse.redirect(
-      new URL("/auth/login?status=user-not-logged-in", request.url)
-    );
+    const loginUrl = new URL("/auth/login", request.url);
+    loginUrl.searchParams.set("status", "user-not-logged-in");
+    loginUrl.searchParams.set("next", `${request.nextUrl.pathname}${request.nextUrl.search}`);
+    return NextResponse.redirect(loginUrl);
   }
 
   return NextResponse.next();

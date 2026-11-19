@@ -109,13 +109,14 @@ export function generateWebSiteSchema(siteUrl: string = SITE_URL) {
       "BuzzClips Platform",
       "Buzz Clips App",
       "BuzzClip App",
+      "BuzzClips Video Editor",
       "बज़क्लिप्स",
       "बज़ क्लिप्स",
     ],
     description:
-      "Free video streaming website, Indian Live TV platform, web series, short films, and viral reels featuring buffer-free adaptive HLS playback, creator community tools, and official FTA TV channels.",
+      "Free online video editor that runs in your browser, plus a free video streaming website, Indian Live TV platform, web series, short films, and viral reels with buffer-free adaptive HLS playback and creator community tools.",
     disambiguatingDescription:
-      "BuzzClips (also known as Buzz Clips or Buzz Clip) is a free video streaming and Indian live TV broadcast platform.",
+      "BuzzClips (also known as Buzz Clips or Buzz Clip) is a free in-browser video editor and a free video streaming and Indian live TV broadcast platform.",
     brand: {
       "@type": "Brand",
       name: "BuzzClips",
@@ -126,7 +127,7 @@ export function generateWebSiteSchema(siteUrl: string = SITE_URL) {
       "@type": "SearchAction",
       target: {
         "@type": "EntryPoint",
-        urlTemplate: `${siteUrl}/?query={search_term_string}`,
+        urlTemplate: `${siteUrl}/explore?query={search_term_string}`,
       },
       "query-input": "required name=search_term_string",
     },
@@ -161,7 +162,7 @@ export function generateOrganizationSchema(siteUrl: string = SITE_URL) {
       "बज़ क्लिप्स",
     ],
     disambiguatingDescription:
-      "BuzzClips (also known as Buzz Clips or Buzz Clip) is a free video streaming and Indian live TV broadcast platform.",
+      "BuzzClips (also known as Buzz Clips or Buzz Clip) is a free in-browser video editor and a free video streaming and Indian live TV broadcast platform.",
     brand: {
       "@type": "Brand",
       name: "BuzzClips",
@@ -175,6 +176,8 @@ export function generateOrganizationSchema(siteUrl: string = SITE_URL) {
       height: 512,
     },
     knowsAbout: [
+      "Online Video Editing",
+      "In-Browser Video Editing with WebCodecs",
       "Indian Live TV Streaming",
       "Free Indian TV Online",
       "Free Video Streaming Website",
@@ -197,7 +200,10 @@ export function generateOrganizationSchema(siteUrl: string = SITE_URL) {
  */
 export function generateSiteNavigationSchema(siteUrl: string = SITE_URL) {
   const navItems = [
-    { name: "Explore Videos", url: siteUrl, description: "Discover trending video clips and creator uploads" },
+    { name: "Free Online Video Editor", url: siteUrl, description: "Trim, cut, merge and add text or music to videos for free in your browser" },
+    { name: "Explore Videos", url: `${siteUrl}/explore`, description: "Discover trending video clips and creator uploads" },
+    { name: "Free Indian Live TV", url: `${siteUrl}/tv`, description: "Watch official Free-To-Air Indian TV channels live" },
+    { name: "Reels & Shorts", url: `${siteUrl}/reels`, description: "Swipe through vertical short videos and reels" },
     { name: "Tech & Coding", url: `${siteUrl}/category/tech`, description: "Software development, AI, and tech clips" },
     { name: "Gaming Highlights", url: `${siteUrl}/category/gaming`, description: "Esports clips, walkthroughs, and gameplay highlights" },
     { name: "Entertainment", url: `${siteUrl}/category/entertainment`, description: "Viral humor, skits, and entertainment shorts" },
@@ -237,7 +243,7 @@ export function generateSoftwareApplicationSchema(siteUrl: string = SITE_URL) {
     applicationCategory: "MultimediaApplication",
     operatingSystem: "All (Web Browser, iOS, Android, macOS, Windows, Linux)",
     description:
-      "BuzzClips is a next-generation video streaming and creator clip platform featuring zero-lag adaptive HLS streaming, interactive engagement, and instant discovery.",
+      "BuzzClips is a free online video editor that runs entirely in your browser, combined with a next-generation video streaming and creator clip platform featuring zero-lag adaptive HLS streaming, interactive engagement, and instant discovery.",
     offers: {
       "@type": "Offer",
       price: "0",
@@ -251,6 +257,10 @@ export function generateSoftwareApplicationSchema(siteUrl: string = SITE_URL) {
       worstRating: "1",
     },
     featureList: [
+      "Free In-Browser Video Editor (No Watermark, No Upload Required)",
+      "Trim, Cut, Split & Merge Video Clips",
+      "Text Overlays, Background Music & Filters",
+      "MP4 Export up to 1080p",
       "Adaptive Bitrate HLS Video Streaming",
       "Interactive Timestamp Comments",
       "Real-time Video Engagement & Likes",
@@ -263,6 +273,7 @@ export function generateSoftwareApplicationSchema(siteUrl: string = SITE_URL) {
 /**
  * Schema.org FAQPage structured data to win Google SERP FAQ rich snippets.
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- kept for backward-compatible signature
 export function generateFaqSchema(siteUrl: string = SITE_URL) {
   const faqs = [
     {
@@ -397,6 +408,7 @@ export function generateVideoJsonLd(
 export function generateProfilePageSchema(
   user: UserDTO,
   canonicalUrl: string,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- kept for backward-compatible signature
   siteUrl: string = SITE_URL
 ) {
   const displayName = user.fullName || user.user_name || "Creator";
@@ -515,6 +527,7 @@ export function generateChannelListSchema(
  * Schema.org FAQPage structured data for BuzzClips TV.
  * Optimizes ranking and triggers SERP question accordions for "buzzclips tv" queries.
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- kept for backward-compatible signature
 export function generateLiveTvFaqSchema(siteUrl: string = SITE_URL) {
   const faqs = [
     {
@@ -612,6 +625,192 @@ export function generateSingleChannelFaqSchema(
   };
 }
 
+/**
+ * Feature list for the free in-browser video editor (home page `/`).
+ * Shared by JSON-LD and visible page content so structured data always matches the page.
+ */
+export const VIDEO_EDITOR_FEATURES: string[] = [
+  "Runs 100% in your browser with WebCodecs - files are never uploaded unless you choose to publish",
+  "Free with no watermark and no signup required to edit or export",
+  "Import multiple video clips, images and audio files",
+  "Trim, split, cut, reorder, duplicate and delete clips on a timeline",
+  "Merge and join multiple videos into one",
+  "Per-clip speed control from 0.25x to 4x",
+  "Per-clip volume and mute",
+  "Rotate and flip video",
+  "Filters: brightness, contrast, saturation, grayscale, sepia and blur",
+  "Aspect ratio presets: 16:9 (YouTube), 9:16 (Reels, Shorts, TikTok), 1:1 (Instagram) and 4:5",
+  "Export resolution: 480p, 720p or 1080p",
+  "Fit or fill the frame with a custom background color",
+  "Text overlays and titles with timing, position, color and size",
+  "Background music with adjustable volume",
+  "Fade in and fade out",
+  "Undo and redo",
+  "Keyboard shortcuts",
+  "Autosave in the browser",
+  "Export MP4 (H.264 video, AAC audio) and download",
+  "Optionally publish directly to BuzzClips when logged in",
+];
 
+/**
+ * Step-by-step instructions for editing a video with the BuzzClips editor.
+ * Shared by HowTo JSON-LD and visible page content.
+ */
+export const VIDEO_EDITOR_HOW_TO_STEPS: { name: string; text: string }[] = [
+  {
+    name: "Add your videos, images and audio",
+    text: "Open the BuzzClips video editor and drag in or select your video clips, photos and music files. They load directly in your browser and are not uploaded to any server.",
+  },
+  {
+    name: "Trim, split and arrange your clips",
+    text: "Drag clip edges on the timeline to trim, split a clip at the playhead to cut out unwanted parts, and reorder, duplicate or delete clips to build your story. Adjust speed, volume, rotation and filters per clip.",
+  },
+  {
+    name: "Add text, music and choose a format",
+    text: "Add titles and text overlays, set background music and its volume, apply fade in and fade out, and pick an aspect ratio such as 16:9 for YouTube or 9:16 for Reels, Shorts and TikTok.",
+  },
+  {
+    name: "Export and download your MP4",
+    text: "Choose 480p, 720p or 1080p and export. Your video is rendered in the browser as an MP4 (H.264/AAC) file with no watermark, ready to download or, if you are logged in, publish to BuzzClips.",
+  },
+];
 
+/**
+ * Frequently asked questions about the free online video editor.
+ * Shared by FAQPage JSON-LD and the visible FAQ on the home page.
+ */
+export const VIDEO_EDITOR_FAQS: { question: string; answer: string }[] = [
+  {
+    question: "Is the BuzzClips online video editor really free?",
+    answer:
+      "Yes. The BuzzClips video editor is completely free to use. There is no watermark on exported videos, no trial period, and no signup is required to edit or export.",
+  },
+  {
+    question: "Are my videos uploaded to a server when I edit them?",
+    answer:
+      "No. The editor runs 100% in your browser using WebCodecs, so your video, image and audio files stay on your device while you edit and export. Files only leave your device if you choose to publish the finished video to BuzzClips.",
+  },
+  {
+    question: "Does the editor add a watermark to my video?",
+    answer:
+      "No. Videos exported from the BuzzClips editor never include a watermark or logo.",
+  },
+  {
+    question: "Can I trim, cut and merge videos online?",
+    answer:
+      "Yes. You can trim the start and end of any clip, split clips to cut out sections, reorder, duplicate or delete clips, and merge multiple videos into a single MP4.",
+  },
+  {
+    question: "How do I make a video for Instagram Reels, YouTube Shorts or TikTok?",
+    answer:
+      "Choose the 9:16 vertical aspect ratio preset, then select fit or fill with a background color so your footage fits the frame. Use 16:9 for regular YouTube videos, 1:1 for square Instagram posts, or 4:5 for Instagram feed videos.",
+  },
+  {
+    question: "Can I add text and music to my video?",
+    answer:
+      "Yes. Add text overlays and titles with custom timing, position, color and size, and add a background music track with adjustable volume. You can also mute or change the volume of each clip and apply fade in and fade out.",
+  },
+  {
+    question: "What format and quality does the editor export?",
+    answer:
+      "The editor exports MP4 files encoded with H.264 video and AAC audio at 480p, 720p or 1080p, which play on virtually every phone, computer and social media platform.",
+  },
+  {
+    question: "Which browsers are supported?",
+    answer:
+      "The editor is built on the WebCodecs API and works best in up-to-date versions of Chrome, Edge and other Chromium-based browsers. Recent versions of Safari and Firefox also support WebCodecs, though support can vary by version. For the best performance, use an up-to-date desktop browser.",
+  },
+  {
+    question: "Will I lose my work if I close the tab?",
+    answer:
+      "Your project is autosaved in your browser, so you can come back and continue editing on the same device. Your media files are never stored on our servers.",
+  },
+];
 
+/**
+ * Schema.org WebApplication structured data for the free in-browser video editor at `/`.
+ */
+export function generateVideoEditorSchema(siteUrl: string = SITE_URL) {
+  return {
+    "@context": "https://schema.org",
+    "@type": ["WebApplication", "SoftwareApplication"],
+    "@id": `${siteUrl}/#video-editor`,
+    name: "BuzzClips Free Online Video Editor",
+    alternateName: [
+      "BuzzClips Video Editor",
+      "Buzz Clips Video Editor",
+      "BuzzClip Video Editor",
+    ],
+    url: siteUrl,
+    description:
+      "Free online video editor that runs entirely in your browser. Trim, cut, merge, crop and rotate videos, add text and music, and export MP4 up to 1080p with no watermark and no signup. Files never leave your device.",
+    applicationCategory: "MultimediaApplication",
+    applicationSubCategory: "Video Editor",
+    operatingSystem: "Any (modern web browser: Windows, macOS, Linux, ChromeOS, Android, iOS)",
+    browserRequirements: "Requires a modern browser with WebCodecs support and JavaScript enabled.",
+    isAccessibleForFree: true,
+    inLanguage: "en",
+    image: `${siteUrl}/opengraph-image`,
+    screenshot: `${siteUrl}/opengraph-image`,
+    offers: {
+      "@type": "Offer",
+      price: "0",
+      priceCurrency: "USD",
+      availability: "https://schema.org/InStock",
+    },
+    featureList: VIDEO_EDITOR_FEATURES,
+    publisher: {
+      "@id": `${siteUrl}/#organization`,
+    },
+  };
+}
+
+/**
+ * Schema.org HowTo structured data describing how to edit a video online with BuzzClips.
+ */
+export function generateVideoEditorHowToSchema(siteUrl: string = SITE_URL) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    name: "How to edit a video online for free",
+    description:
+      "Edit a video in your browser in four steps with the free BuzzClips online video editor - no watermark, no signup and no upload required.",
+    totalTime: "PT5M",
+    estimatedCost: {
+      "@type": "MonetaryAmount",
+      currency: "USD",
+      value: "0",
+    },
+    supply: [
+      { "@type": "HowToSupply", name: "Video clips, images or audio files" },
+    ],
+    tool: [
+      { "@type": "HowToTool", name: "A modern web browser" },
+    ],
+    step: VIDEO_EDITOR_HOW_TO_STEPS.map((step, index) => ({
+      "@type": "HowToStep",
+      position: index + 1,
+      name: step.name,
+      text: step.text,
+      url: `${siteUrl}/#how-to-step-${index + 1}`,
+    })),
+  };
+}
+
+/**
+ * Schema.org FAQPage structured data for the free online video editor.
+ */
+export function generateVideoEditorFaqSchema() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: VIDEO_EDITOR_FAQS.map((faq) => ({
+      "@type": "Question",
+      name: faq.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: faq.answer,
+      },
+    })),
+  };
+}

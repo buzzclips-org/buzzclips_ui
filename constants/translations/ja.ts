@@ -20,6 +20,8 @@ export const ja: TranslationDictionary = {
   },
   nav: {
     home: "ホーム",
+    editor: "動画エディター",
+    explore: "探索",
     reels: "リール",
     liveTv: "ライブTV",
     trending: "急上昇",

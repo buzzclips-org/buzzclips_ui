@@ -14,6 +14,23 @@ describe("Footer Component", () => {
     expect(screen.getByText("System Status")).toBeInTheDocument();
   });
 
+  it("links to the video editor home and the explore feed", () => {
+    render(<Footer />);
+
+    expect(screen.getByRole("link", { name: "Video Editor" })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: "Explore Videos" })).toHaveAttribute(
+      "href",
+      "/explore"
+    );
+    expect(
+      screen.getByRole("link", { name: "Free Online Video Editor" })
+    ).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: "Free Video Streaming" })).toHaveAttribute(
+      "href",
+      "/explore"
+    );
+  });
+
   it("displays copyright with current year", () => {
     render(<Footer />);
 

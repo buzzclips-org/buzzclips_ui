@@ -4,6 +4,7 @@
 
 import robots from "@/app/robots";
 import sitemap from "@/app/sitemap";
+import manifest from "@/app/manifest";
 import { GET as oembedHandler } from "@/app/api/oembed/route";
 import { getVideoBySlug } from "@/utility/requests";
 
@@ -37,6 +38,20 @@ describe("SEO & Indexing Infrastructure", () => {
       expect(botRule).toBeDefined();
       expect(botRule?.allow).toContain("/watch/*");
       expect(botRule?.disallow).toContain("/my-videos");
+    });
+  });
+
+  describe("app/manifest.ts", () => {
+    it("positions the app as an editor and exposes editor/explore shortcuts", () => {
+      const m = manifest();
+      expect(m.name).toContain("Video Editor");
+      expect(m.start_url).toBe("/");
+      expect(m.shortcuts).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ name: "Video Editor", url: "/" }),
+          expect.objectContaining({ name: "Explore Videos", url: "/explore" }),
+        ])
+      );
     });
   });
 
@@ -89,6 +104,15 @@ describe("SEO & Indexing Infrastructure", () => {
           (e) => e.url === "https://buzzclips.app/watch/private-video"
         )
       ).toBe(false);
+
+      // Home (video editor) stays top priority; explore feed is daily at 0.9
+      const home = sitemapEntries.find((e) => e.url === "https://buzzclips.app");
+      expect(home?.priority).toBe(1.0);
+      const explore = sitemapEntries.find(
+        (e) => e.url === "https://buzzclips.app/explore"
+      );
+      expect(explore?.changeFrequency).toBe("daily");
+      expect(explore?.priority).toBe(0.9);
     });
     it("handles missing slug, missing uploadDate, and error fallbacks in sitemap", async () => {
       global.fetch = jest.fn().mockResolvedValue({
@@ -206,6 +230,12 @@ describe("SEO & Indexing Infrastructure", () => {
       generateOrganizationSchema,
       generateSiteNavigationSchema,
       generateSoftwareApplicationSchema,
+      generateVideoEditorSchema,
+      generateVideoEditorHowToSchema,
+      generateVideoEditorFaqSchema,
+      VIDEO_EDITOR_FEATURES,
+      VIDEO_EDITOR_HOW_TO_STEPS,
+      VIDEO_EDITOR_FAQS,
       generateFaqSchema,
       generateBreadcrumbSchema,
       generateVideoJsonLd,
@@ -332,6 +362,60 @@ describe("SEO & Indexing Infrastructure", () => {
         expect(schema["@graph"].length).toBeGreaterThan(0);
         expect(schema["@graph"][0]["@type"]).toBe("SiteNavigationElement");
         expect(schema["@graph"][0].url).toBe("https://buzzclips.app");
+        expect(schema["@graph"][0].name).toBe("Free Online Video Editor");
+        expect(
+          schema["@graph"].some(
+            (item: { url: string }) => item.url === "https://buzzclips.app/explore"
+          )
+        ).toBe(true);
+      });
+
+      it("points the WebSite SearchAction at the explore feed", () => {
+        const schema = generateWebSiteSchema();
+        expect(schema.potentialAction.target.urlTemplate).toBe(
+          "https://buzzclips.app/explore?query={search_term_string}"
+        );
+      });
+
+      it("generates video editor WebApplication schema", () => {
+        const schema = generateVideoEditorSchema();
+        expect(schema["@type"]).toContain("WebApplication");
+        expect(schema["@type"]).toContain("SoftwareApplication");
+        expect(schema["@id"]).toBe("https://buzzclips.app/#video-editor");
+        expect(schema.url).toBe("https://buzzclips.app");
+        expect(schema.applicationCategory).toBe("MultimediaApplication");
+        expect(schema.offers.price).toBe("0");
+        expect(schema.isAccessibleForFree).toBe(true);
+        expect(schema.featureList).toBe(VIDEO_EDITOR_FEATURES);
+        expect(schema.featureList.length).toBeGreaterThan(10);
+        expect(schema).not.toHaveProperty("aggregateRating");
+
+        const custom = generateVideoEditorSchema("https://example.com");
+        expect(custom.url).toBe("https://example.com");
+        expect(custom.publisher["@id"]).toBe("https://example.com/#organization");
+      });
+
+      it("generates HowTo schema for editing a video", () => {
+        const schema = generateVideoEditorHowToSchema();
+        expect(schema["@type"]).toBe("HowTo");
+        expect(schema.step).toHaveLength(VIDEO_EDITOR_HOW_TO_STEPS.length);
+        expect(schema.step[0]).toMatchObject({
+          "@type": "HowToStep",
+          position: 1,
+          name: VIDEO_EDITOR_HOW_TO_STEPS[0].name,
+          url: "https://buzzclips.app/#how-to-step-1",
+        });
+        expect(schema.estimatedCost.value).toBe("0");
+      });
+
+      it("generates video editor FAQPage schema matching visible FAQs", () => {
+        const schema = generateVideoEditorFaqSchema();
+        expect(schema["@type"]).toBe("FAQPage");
+        expect(schema.mainEntity).toHaveLength(VIDEO_EDITOR_FAQS.length);
+        expect(schema.mainEntity[0].name).toBe(VIDEO_EDITOR_FAQS[0].question);
+        expect(schema.mainEntity[0].acceptedAnswer.text).toBe(
+          VIDEO_EDITOR_FAQS[0].answer
+        );
       });
 
       it("generates WebApplication schema with applicationCategory and offers", () => {
@@ -341,6 +425,9 @@ describe("SEO & Indexing Infrastructure", () => {
         expect(schema.applicationCategory).toBe("MultimediaApplication");
         expect(schema.offers.price).toBe("0");
         expect(schema.featureList).toBeInstanceOf(Array);
+        expect(
+          schema.featureList.some((f: string) => f.includes("Video Editor"))
+        ).toBe(true);
       });
 
       it("generates FAQPage schema with questions and accepted answers", () => {
@@ -397,12 +484,38 @@ describe("SEO & Indexing Infrastructure", () => {
         expect(ALL_SEO_BUZZWORDS).toContain("buzzclip");
         expect(ALL_SEO_BUZZWORDS).toContain("free indian tv");
         expect(ALL_SEO_BUZZWORDS).toContain("video streaming website");
+        expect(ALL_SEO_BUZZWORDS).toContain("free online video editor");
+
+        // Verify video editor keyword set
+        const { VIDEO_EDITOR_SEO_KEYWORDS } = await import("@/constants/seoKeywords");
+        expect(VIDEO_EDITOR_SEO_KEYWORDS).toBe(SEO_KEYWORD_GROUPS.VIDEO_EDITOR);
+        for (const kw of [
+          "free online video editor",
+          "video editor online no watermark",
+          "trim video online",
+          "merge videos online",
+          "crop video online",
+          "add text to video",
+          "add music to video",
+          "mp4 editor",
+          "browser video editor",
+        ]) {
+          expect(VIDEO_EDITOR_SEO_KEYWORDS).toContain(kw);
+          expect(ALL_SEO_BUZZWORDS).toContain(kw);
+        }
+        expect(new Set(ALL_SEO_BUZZWORDS).size).toBe(ALL_SEO_BUZZWORDS.length);
 
         // Verify POPULAR_SEO_TOPICS
         expect(POPULAR_SEO_TOPICS.length).toBeGreaterThan(10);
         expect(POPULAR_SEO_TOPICS.some((t) => t.url === "/tv")).toBe(true);
         expect(POPULAR_SEO_TOPICS.some((t) => t.name === "Free Indian TV")).toBe(true);
         expect(POPULAR_SEO_TOPICS.some((t) => t.name === "Web Series & Short Films")).toBe(true);
+        expect(
+          POPULAR_SEO_TOPICS.some((t) => t.url === "/" && t.category === "editor")
+        ).toBe(true);
+        expect(
+          POPULAR_SEO_TOPICS.find((t) => t.name === "Free Video Streaming")?.url
+        ).toBe("/explore");
 
         // Verify generateBrandPermutations helper
         const { generateBrandPermutations } = await import("@/constants/seoKeywords");

@@ -18,6 +18,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       },
     },
     {
+      url: `${baseUrl}/explore`,
+      lastModified: new Date(),
+      changeFrequency: "daily",
+      priority: 0.9,
+      alternates: {
+        languages: generateHreflangAlternates(`${baseUrl}/explore`),
+      },
+    },
+    {
       url: `${baseUrl}/tv`,
       lastModified: new Date(),
       changeFrequency: "always",

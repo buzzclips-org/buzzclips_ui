@@ -18,6 +18,8 @@ export const en = {
   },
   nav: {
     home: "Home",
+    editor: "Video Editor",
+    explore: "Explore",
     reels: "Reels",
     liveTv: "Live TV",
     trending: "Trending",

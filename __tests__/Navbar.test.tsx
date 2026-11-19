@@ -33,7 +33,8 @@ describe("Navbar Component", () => {
     render(<Navbar />);
 
     expect(screen.getByText("buzzclips")).toBeInTheDocument();
-    expect(screen.getByText("Home")).toBeInTheDocument();
+    expect(screen.getByText("Video Editor").closest("a")).toHaveAttribute("href", "/");
+    expect(screen.getByText("Explore").closest("a")).toHaveAttribute("href", "/explore");
   });
 
   it("shows Sign In button when unauthenticated", () => {

@@ -195,7 +195,7 @@ export default function ExploreClient({
   const handleCategorySelect = (categoryValue: string) => {
     setActiveCategory(categoryValue);
     if (categoryValue === "ALL") {
-      router.push("/");
+      router.push("/explore");
     } else {
       const catObj = CATEGORIES.find((c) => c.value === categoryValue);
       if (catObj?.slug) {

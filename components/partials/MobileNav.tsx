@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, PlusCircle, Film, Tv, User } from "lucide-react";
+import { Compass, Scissors, Film, Tv, User } from "lucide-react";
 import { useAuth } from "@/store/auth-context";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import clsx from "clsx";
@@ -17,10 +17,10 @@ export function MobileNav() {
 
   const navItems = [
     {
-      label: "Home",
-      href: "/",
-      icon: Home,
-      isActive: pathname === "/",
+      label: "Explore",
+      href: "/explore",
+      icon: Compass,
+      isActive: pathname === "/explore" || pathname.startsWith("/category") || pathname.startsWith("/tag"),
     },
     {
       label: "Reels",
@@ -29,11 +29,11 @@ export function MobileNav() {
       isActive: pathname.startsWith("/reels"),
     },
     {
-      label: "Upload",
-      href: "/video/upload",
-      icon: PlusCircle,
+      label: "Create",
+      href: "/",
+      icon: Scissors,
       isPrimary: true,
-      isActive: pathname === "/video/upload",
+      isActive: pathname === "/" || pathname === "/video/upload",
     },
     {
       label: "Live TV",

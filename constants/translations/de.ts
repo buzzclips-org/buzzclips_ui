@@ -20,6 +20,8 @@ export const de: TranslationDictionary = {
   },
   nav: {
     home: "Startseite",
+    editor: "Video-Editor",
+    explore: "Entdecken",
     reels: "Reels",
     liveTv: "Live-TV",
     trending: "Trends",

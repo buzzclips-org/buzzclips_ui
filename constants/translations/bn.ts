@@ -20,6 +20,8 @@ export const bn: TranslationDictionary = {
   },
   nav: {
     home: "হোম",
+    editor: "ভিডিও এডিটর",
+    explore: "এক্সপ্লোর",
     reels: "রিলস",
     liveTv: "লাইভ টিভি",
     trending: "ট্রেন্ডিং",

@@ -50,11 +50,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "BuzzClips (Buzz Clips) - Free Indian TV & Next-Gen Video Streaming Platform",
+    default: "BuzzClips - Free Online Video Editor & Video Streaming Platform",
     template: "%s | BuzzClips (Buzz Clips)",
   },
   description:
-    "Watch free Indian TV live, trending viral clips, gaming highlights, and creator shorts on BuzzClips (Buzz Clips). Fast buffer-free adaptive HLS video streaming with zero lag.",
+    "Edit videos free in your browser with no watermark or signup, then watch free Indian TV live, trending viral clips, and creator shorts on BuzzClips (Buzz Clips) with buffer-free HLS streaming.",
   applicationName: "BuzzClips",
   appleWebApp: {
     capable: true,
@@ -64,8 +64,9 @@ export const metadata: Metadata = {
   formatDetection: {
     telephone: false,
   },
-  category: "video streaming & entertainment",
-  classification: "Free Indian TV, Video Streaming Platform, Creator Media, Viral Video Clips",
+  category: "video editing, video streaming & entertainment",
+  classification:
+    "Free Online Video Editor, Video Streaming Platform, Free Indian TV, Creator Media, Viral Video Clips",
   keywords: ALL_SEO_BUZZWORDS,
   icons: {
     icon: [
@@ -104,23 +105,23 @@ export const metadata: Metadata = {
     ],
     url: SITE_URL,
     siteName: "BuzzClips",
-    title: "BuzzClips - Next-Gen Video Streaming Platform",
+    title: "BuzzClips - Free Online Video Editor & Video Streaming Platform",
     description:
-      "Explore, share, and stream high-quality videos on BuzzClips. Powered by adaptive HLS streaming, creator tools, and instant video discovery.",
+      "Edit videos for free in your browser with no watermark, then share and stream them on BuzzClips with adaptive HLS playback, creator tools, and instant video discovery.",
     images: [
       {
         url: `${SITE_URL}/opengraph-image`,
         width: 1200,
         height: 630,
-        alt: "BuzzClips - Next-Gen Video Streaming Platform",
+        alt: "BuzzClips - Free Online Video Editor & Video Streaming Platform",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "BuzzClips - Next-Gen Video Streaming Platform",
+    title: "BuzzClips - Free Online Video Editor & Video Streaming Platform",
     description:
-      "Explore, share, and stream high-quality videos on BuzzClips with adaptive HLS playback.",
+      "Edit videos free in your browser with no watermark, then share and stream them on BuzzClips.",
     images: [`${SITE_URL}/opengraph-image`],
   },
   robots: {

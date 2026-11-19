@@ -73,7 +73,17 @@ export function Navbar() {
                     href="/"
                     className="text-sm font-medium px-3.5 py-2 hover:underline"
                   >
-                    {t("nav.home")}
+                    {t("nav.editor")}
+                  </Link>
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <NavigationMenuLink asChild>
+                  <Link
+                    href="/explore"
+                    className="text-sm font-medium px-3.5 py-2 hover:underline"
+                  >
+                    {t("nav.explore")}
                   </Link>
                 </NavigationMenuLink>
               </NavigationMenuItem>

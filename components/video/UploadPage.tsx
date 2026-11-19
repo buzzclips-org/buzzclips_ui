@@ -56,6 +56,7 @@ import {
   completePresignedUpload,
   abortPresignedUpload,
 } from "@/utility/requests";
+import { clearPendingExport, loadPendingExport } from "@/components/editor/engine/storage";
 
 const MAX_FILE_SIZE_MB = 1000; // 1GB direct S3 upload
 
@@ -258,6 +259,28 @@ export default function UploadPage() {
     }
   };
 
+  // Hand-off from the in-browser editor ("/" -> Export -> Publish): attach the exported video.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (new URLSearchParams(window.location.search).get("source") !== "editor") return;
+    let cancelled = false;
+    loadPendingExport().then((pending) => {
+      if (cancelled || !pending) return;
+      const file = new File([pending.blob], pending.fileName, {
+        type: pending.blob.type || "video/mp4",
+      });
+      handleFileSelection(file);
+      if (pending.title?.trim()) {
+        setValue("videoTitle", pending.title.trim().slice(0, 100), { shouldValidate: true });
+      }
+      toast.success("Your edited video is attached. Add the details and publish!");
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleRemoveFile = (e: React.MouseEvent) => {
     e.stopPropagation();
     setValue("file", null as unknown as File, { shouldValidate: true });
@@ -397,6 +420,7 @@ export default function UploadPage() {
       }
       toast.success("Video uploaded directly to S3! Transcoding queued 🚀");
       setIsUploaded(true);
+      clearPendingExport();
       reset({
         videoTitle: "",
         description: "",
@@ -423,6 +447,7 @@ export default function UploadPage() {
         }
         toast.success(MESSAGES.FILE_UPLOADED);
         setIsUploaded(true);
+        clearPendingExport();
       } catch (fallbackErr) {
         console.error(fallbackErr);
         toast.error(MESSAGES.FILE_UPLOAD_FAILED);

@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "BuzzClips - Next-Gen Video Streaming Platform";
+export const alt = "BuzzClips - Free Online Video Editor & Video Streaming Platform";
 export const size = {
   width: 1200,
   height: 630,
@@ -93,7 +93,7 @@ export default async function Image() {
             marginBottom: "12px",
           }}
         >
-          Next-Gen Video Streaming & Creator Platform
+          Free Online Video Editor & Video Streaming Platform
         </div>
 
         {/* Sub-tagline */}
@@ -105,7 +105,7 @@ export default async function Image() {
             letterSpacing: "0.02em",
           }}
         >
-          Adaptive HLS Playback • High-Quality Streaming • Community Driven
+          Trim • Merge • Add Text & Music • No Watermark • Runs in Your Browser
         </div>
       </div>
     ),

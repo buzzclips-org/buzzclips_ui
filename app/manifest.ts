@@ -2,14 +2,39 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "BuzzClips - Next-Gen Video Streaming Platform",
+    name: "BuzzClips - Free Online Video Editor & Video Streaming",
     short_name: "BuzzClips",
     description:
-      "Explore, share, and stream high-quality videos on BuzzClips. Powered by adaptive HLS streaming and creator-first tools.",
+      "Edit videos for free in your browser with no watermark or upload, then explore, share, and stream high-quality videos on BuzzClips with adaptive HLS streaming.",
+    categories: ["video", "entertainment", "productivity"],
     start_url: "/",
     display: "standalone",
     background_color: "#09090b",
     theme_color: "#3b82f6",
+    shortcuts: [
+      {
+        name: "Video Editor",
+        short_name: "Editor",
+        description: "Open the free in-browser video editor",
+        url: "/",
+      },
+      {
+        name: "Explore Videos",
+        short_name: "Explore",
+        description: "Browse trending creator videos",
+        url: "/explore",
+      },
+      {
+        name: "Reels & Shorts",
+        short_name: "Reels",
+        url: "/reels",
+      },
+      {
+        name: "Live TV",
+        short_name: "TV",
+        url: "/tv",
+      },
+    ],
     icons: [
       {
         src: "/favicon.ico",

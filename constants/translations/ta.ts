@@ -20,6 +20,8 @@ export const ta: TranslationDictionary = {
   },
   nav: {
     home: "முகப்பு",
+    editor: "வீடியோ எடிட்டர்",
+    explore: "ஆராய்",
     reels: "ரீல்ஸ்",
     liveTv: "நேரலை டிவி",
     trending: "பிரபலமானவை",

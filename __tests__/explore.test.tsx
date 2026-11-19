@@ -121,7 +121,7 @@ describe("ExploreClient & SEO Category/Tag Routes", () => {
     const allPill = screen.getByRole("button", { name: "All" });
     fireEvent.click(allPill);
 
-    expect(mockPush).toHaveBeenCalledWith("/");
+    expect(mockPush).toHaveBeenCalledWith("/explore");
   });
 
   it("generates correct metadata for category pages", async () => {

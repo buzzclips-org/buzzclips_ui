@@ -7,6 +7,7 @@
  * 4. Video Streaming Websites & OTT ("free video streaming", "video streaming website", "buffer-free HLS")
  * 5. Short Videos, Viral Reels & Entertainment ("viral video clips", "watch reels online free", "shorts")
  * 6. Regional & Multilingual Variations (Hindi, Hinglish, regional scripts)
+ * 7. Free Online Video Editor ("free online video editor", "trim video online", "merge videos online")
  */
 
 export const SEO_KEYWORD_GROUPS = {
@@ -346,7 +347,92 @@ export const SEO_KEYWORD_GROUPS = {
     "मुफ्त फिल्में देखें",
     "भारत लाइव टीवी चैनल",
   ],
+
+  // 7. Free Online Video Editor (in-browser, client-side editing at buzzclips.app/)
+  VIDEO_EDITOR: [
+    // Core head terms
+    "free online video editor",
+    "online video editor",
+    "video editor online free",
+    "free video editor",
+    "video editor no watermark",
+    "video editor online no watermark",
+    "free video editor without watermark",
+    "video editor no sign up",
+    "online video editor no signup",
+    "browser video editor",
+    "in-browser video editor",
+    "web video editor",
+    "video editor for pc online",
+    "video editor for chromebook",
+    "mp4 editor",
+    "mp4 editor online",
+    "video maker",
+    "free video maker online",
+    "simple video editor",
+    "easy video editor",
+    "private video editor",
+    "video editor that does not upload files",
+
+    // Task-based queries
+    "trim video online",
+    "trim video",
+    "cut video online",
+    "cut video",
+    "video cutter",
+    "split video online",
+    "merge videos online",
+    "join videos online",
+    "combine videos",
+    "video merger",
+    "crop video online",
+    "resize video online",
+    "change aspect ratio of video",
+    "rotate video online",
+    "flip video online",
+    "add text to video",
+    "add titles to video",
+    "add music to video",
+    "add audio to video",
+    "mute video online",
+    "change video speed online",
+    "speed up video",
+    "slow motion video maker",
+    "video filters online",
+    "add fade in fade out to video",
+    "make video from images",
+    "photo to video maker",
+    "convert video to mp4",
+    "export video 1080p",
+
+    // Platform / format-specific queries
+    "youtube video editor",
+    "youtube video editor free",
+    "reels video editor",
+    "instagram reels editor",
+    "shorts video editor",
+    "youtube shorts editor",
+    "tiktok video editor",
+    "tiktok video editor online",
+    "instagram video editor",
+    "vertical video editor",
+    "9:16 video editor",
+    "square video maker",
+    "16:9 video editor",
+
+    // Brand + editor combinations
+    "buzzclips video editor",
+    "buzz clips video editor",
+    "buzzclip video editor",
+    "buzzclips editor",
+  ],
 } as const;
+
+/**
+ * Free online video editor keyword set targeting task-based editing queries
+ * ("trim video online", "merge videos online", "add text to video") for the home page editor.
+ */
+export const VIDEO_EDITOR_SEO_KEYWORDS: readonly string[] = SEO_KEYWORD_GROUPS.VIDEO_EDITOR;
 
 /**
  * Complete, flattened, de-duplicated array of all top-tier SEO buzzwords
@@ -355,6 +441,7 @@ export const SEO_KEYWORD_GROUPS = {
 export const ALL_SEO_BUZZWORDS: string[] = Array.from(
   new Set([
     ...SEO_KEYWORD_GROUPS.BRAND_AND_OFFICIAL,
+    ...SEO_KEYWORD_GROUPS.VIDEO_EDITOR,
     ...SEO_KEYWORD_GROUPS.CREATIVE_WORKS_AND_FORMATS,
     ...SEO_KEYWORD_GROUPS.INDIAN_TV,
     ...SEO_KEYWORD_GROUPS.VIDEO_STREAMING_PLATFORM,
@@ -388,7 +475,7 @@ export interface SeoTopicItem {
   name: string;
   url: string;
   badge?: string;
-  category: "tv" | "streaming" | "reels" | "category" | "works";
+  category: "tv" | "streaming" | "reels" | "category" | "works" | "editor";
 }
 
 /**
@@ -409,8 +496,11 @@ export const POPULAR_SEO_TOPICS: SeoTopicItem[] = [
   { name: "DD Retro Classics", url: "/tv?channel=dd-retro", category: "tv" },
   { name: "DD Urdu", url: "/tv?channel=dd-urdu", category: "tv" },
 
+  // Free Online Video Editor
+  { name: "Free Online Video Editor", url: "/", badge: "New", category: "editor" },
+
   // Video Streaming, Works & OTT Formats
-  { name: "Free Video Streaming", url: "/", category: "streaming" },
+  { name: "Free Video Streaming", url: "/explore", category: "streaming" },
   { name: "Trending Videos", url: "/trending", badge: "Hot", category: "streaming" },
   { name: "Reels & Shorts", url: "/reels", badge: "New", category: "reels" },
   { name: "Viral Video Clips", url: "/category/entertainment", category: "streaming" },

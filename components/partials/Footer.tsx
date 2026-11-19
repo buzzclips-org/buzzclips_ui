@@ -98,7 +98,12 @@ export function Footer() {
               <ul className="space-y-1.5 text-xs">
                 <li>
                   <Link href="/" className="hover:text-foreground transition-colors">
-                    Home
+                    Video Editor
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/explore" className="hover:text-foreground transition-colors">
+                    Explore Videos
                   </Link>
                 </li>
                 <li>
@@ -198,7 +203,7 @@ export function Footer() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <h4 className="text-xs font-semibold text-foreground tracking-wider uppercase flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-              <span>Popular Free Indian TV & Video Streaming Searches</span>
+              <span>Popular Video Editor, Free Indian TV & Video Streaming Searches</span>
             </h4>
             <Link
               href="/tv"
@@ -210,6 +215,10 @@ export function Footer() {
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-muted-foreground/80">
             <Link href="/" className="hover:text-primary transition-colors font-medium text-foreground/90">
               Buzz Clips
+            </Link>
+            <span>•</span>
+            <Link href="/" className="hover:text-primary transition-colors font-medium text-foreground/90">
+              Free Online Video Editor
             </Link>
             <span>•</span>
             <Link href="/tv" className="hover:text-primary transition-colors font-medium text-foreground/90">
@@ -236,7 +245,7 @@ export function Footer() {
               DD India HD
             </Link>
             <span>•</span>
-            <Link href="/" className="hover:text-primary transition-colors font-medium text-foreground/90">
+            <Link href="/explore" className="hover:text-primary transition-colors font-medium text-foreground/90">
               Free Video Streaming
             </Link>
             <span>•</span>

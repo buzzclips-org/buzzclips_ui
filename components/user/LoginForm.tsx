@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { safeRedirectPath } from "@/utility/redirect";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -44,6 +45,7 @@ export function LoginForm() {
   const { login } = useAuth();
   const { t } = useLanguage();
   const searchParams = useSearchParams();
+  const nextPath = safeRedirectPath(searchParams.get("next"));
   const [message, setMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
@@ -99,7 +101,7 @@ export function LoginForm() {
     }
 
     if (loggedIn) {
-      window.location.replace("/");
+      window.location.replace(nextPath);
     }
   };
 
@@ -121,7 +123,7 @@ export function LoginForm() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <GoogleSignInButton mode="login" />
+        <GoogleSignInButton mode="login" callbackUrl={nextPath} />
 
         <div className="relative my-3">
           <div className="absolute inset-0 flex items-center">

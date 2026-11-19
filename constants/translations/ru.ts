@@ -20,6 +20,8 @@ export const ru: TranslationDictionary = {
   },
   nav: {
     home: "Главная",
+    editor: "Видеоредактор",
+    explore: "Обзор",
     reels: "Reels",
     liveTv: "Прямой эфир",
     trending: "В тренде",

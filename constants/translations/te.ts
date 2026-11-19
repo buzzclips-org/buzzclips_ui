@@ -20,6 +20,8 @@ export const te: TranslationDictionary = {
   },
   nav: {
     home: "హోమ్",
+    editor: "వీడియో ఎడిటర్",
+    explore: "ఎక్స్‌ప్లోర్",
     reels: "రీల్స్",
     liveTv: "లైవ్ టీవీ",
     trending: "ట్రెండింగ్",
