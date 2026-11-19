@@ -19,8 +19,6 @@ import {
   AlignLeft,
   Globe,
 } from "lucide-react";
-import axios from "axios";
-import { api_instance } from "@/global";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/store/language-context";
@@ -52,25 +50,17 @@ import {
   TranscodeProgress,
 } from "@/types/video";
 import {
-  requestPresignedUpload,
-  completePresignedUpload,
-  abortPresignedUpload,
-} from "@/utility/requests";
+  MAX_UPLOAD_SIZE_MB,
+  VIDEO_CATEGORIES,
+  isNetworkError,
+  subscribeTranscodeProgress,
+  uploadVideo,
+} from "@/utility/videoUpload";
 import { clearPendingExport, loadPendingExport } from "@/components/editor/engine/storage";
 
-const MAX_FILE_SIZE_MB = 1000; // 1GB direct S3 upload
+const MAX_FILE_SIZE_MB = MAX_UPLOAD_SIZE_MB; // 1GB direct S3 upload
 
-const CATEGORIES: VideoCategory[] = [
-  "OTHER",
-  "TECH",
-  "EDUCATION",
-  "GAMING",
-  "ENTERTAINMENT",
-  "MUSIC",
-  "NEWS",
-  "SPORTS",
-  "LIFESTYLE",
-];
+const CATEGORIES: VideoCategory[] = VIDEO_CATEGORIES;
 
 const formSchema = z.object({
   videoTitle: z
@@ -107,105 +97,21 @@ export default function UploadPage() {
   const [uploadProcessId, setUploadProcessId] = useState<string | null>(null);
   const [transcodeProgress, setTranscodeProgress] = useState<TranscodeProgress | null>(null);
 
-  // Subscribe to live Server-Sent Events (SSE) via processId or videoId with REST polling fallback
+  // Follow server-side transcoding (SSE with REST polling fallback).
   useEffect(() => {
     if (!createdVideoId && !uploadProcessId) return;
-
-    let eventSource: EventSource | null = null;
-    let pollInterval: NodeJS.Timeout | null = null;
-
-    const stopTracking = () => {
-      if (pollInterval) {
-        clearInterval(pollInterval);
-        pollInterval = null;
-      }
-      if (eventSource) {
-        eventSource.close();
-        eventSource = null;
-      }
-    };
-
-    const pollStatus = async () => {
-      if (!createdVideoId) return;
-      try {
-        const res = await fetch(`${api_instance}/vid/${createdVideoId}/status`);
-        if (res.ok) {
-          const data = await res.json();
-          const videoStatus = data.videoStatus || data.status;
-          setTranscodeProgress({
-            videoId: createdVideoId,
-            processId: uploadProcessId || undefined,
-            stage: data.stage || (videoStatus === "COMPLETED" ? "COMPLETED" : "PROCESSING"),
-            percent: data.percent ?? (videoStatus === "COMPLETED" ? 100 : 50),
-            status: videoStatus || "PROCESSING",
-          });
-          if (videoStatus === "COMPLETED") {
-            toast.success("Multi-rendition HLS transcoding completed! Video is live 🎬");
-            stopTracking();
-          } else if (videoStatus === "FAILED") {
-            toast.error("Transcoding failed. Please check video format.");
-            stopTracking();
-          }
+    return subscribeTranscodeProgress({
+      videoId: createdVideoId,
+      processId: uploadProcessId,
+      onUpdate: (progress) => {
+        setTranscodeProgress(progress);
+        if (progress.status === "COMPLETED") {
+          toast.success("Multi-rendition HLS transcoding completed! Video is live 🎬");
+        } else if (progress.status === "FAILED") {
+          toast.error("Transcoding failed. Please check video format.");
         }
-      } catch (err) {
-        console.error("Polling status error", err);
-      }
-    };
-
-    try {
-      // Connect to SSE via processId if available, otherwise videoId transcode-progress
-      const sseUrl = uploadProcessId
-        ? `${api_instance}/vid/upload/process/${encodeURIComponent(uploadProcessId)}/progress`
-        : `${api_instance}/vid/${createdVideoId}/transcode-progress`;
-
-      eventSource = new EventSource(sseUrl);
-
-      eventSource.addEventListener("progress", (event) => {
-        try {
-          const data: any = JSON.parse(event.data);
-          const percent = typeof data.percent === "number" ? data.percent : Number(data.percent || 0);
-          setTranscodeProgress({
-            videoId: createdVideoId || data.videoId,
-            processId: uploadProcessId || data.processId,
-            stage: data.stage || (data.status === "COMPLETED" ? "COMPLETED" : "PROCESSING"),
-            percent: percent,
-            status: data.status || (percent >= 100 ? "COMPLETED" : "PROCESSING"),
-          });
-          if (data.status === "COMPLETED" || data.status === "FAILED") {
-            if (data.status === "COMPLETED") {
-              toast.success("Multi-rendition HLS transcoding completed! Video is live 🎬");
-            } else {
-              toast.error("Transcoding failed. Please check video format.");
-            }
-            stopTracking();
-          }
-        } catch (e) {
-          console.error("SSE parse error", e);
-        }
-      });
-
-      eventSource.onerror = () => {
-        // SSE connection dropped; initiate REST polling fallback if videoId is available
-        if (eventSource) {
-          eventSource.close();
-          eventSource = null;
-        }
-        if (createdVideoId && !pollInterval) {
-          pollStatus();
-          pollInterval = setInterval(pollStatus, 3000);
-        }
-      };
-    } catch (e) {
-      console.error("Failed to connect to SSE, using polling fallback", e);
-      if (createdVideoId) {
-        pollStatus();
-        pollInterval = setInterval(pollStatus, 3000);
-      }
-    }
-
-    return () => {
-      stopTracking();
-    };
+      },
+    });
   }, [createdVideoId, uploadProcessId]);
 
   const form = useForm({
@@ -312,95 +218,6 @@ export default function UploadPage() {
     }
   };
 
-  // Direct S3 Presigned Upload (Bypasses server proxy, handles multi-GB files)
-  const uploadVideoDirect = async (
-    data: z.infer<typeof formSchema>,
-    token: string,
-    onProgress: (percent: number) => void
-  ) => {
-    const file: File = data.file;
-
-    // 1. Request presigned URL & process ID
-    const presigned = await requestPresignedUpload(
-      file.name,
-      file.type || "video/mp4",
-      token
-    );
-    const { uploadUrl, s3Key, processId } = presigned;
-
-    try {
-      // 2. Direct upload to S3 with progress tracking
-      await axios.put(uploadUrl, file, {
-        headers: {
-          "Content-Type": file.type || "video/mp4",
-        },
-        onUploadProgress: (progressEvent) => {
-          const total = progressEvent.total || file.size || 1;
-          const percent = Math.round((progressEvent.loaded * 100) / total);
-          onProgress(percent);
-        },
-      });
-
-      // 3. Complete upload ONLY if PUT to S3 succeeded
-      const tagsList = data.tags
-        ? data.tags.split(",").map((t) => t.trim()).filter(Boolean)
-        : [];
-
-      const completeResult = await completePresignedUpload(
-        {
-          s3Key,
-          processId,
-          videoTitle: data.videoTitle,
-          description: data.description,
-          tags: tagsList,
-          category: data.category as VideoCategory,
-          visibility: data.visibility as VideoVisibility,
-        },
-        token
-      );
-
-      return {
-        ...completeResult,
-        processId: processId || completeResult.processId,
-      };
-    } catch (err: any) {
-      // If S3 direct upload failed (e.g. CORS), abort process and notify backend
-      if (processId) {
-        await abortPresignedUpload(processId, token).catch(() => {});
-      }
-      throw err;
-    }
-  };
-
-  // Legacy Multipart fallback
-  const uploadVideoLegacy = async (
-    data: z.infer<typeof formSchema>,
-    token: string,
-    onProgress: (percent: number) => void
-  ) => {
-    const formData = new FormData();
-    formData.append("videoTitle", data.videoTitle);
-    formData.append("file", data.file);
-    formData.append("userId", data.userId);
-    if (data.description) formData.append("description", data.description);
-    if (data.category) formData.append("category", data.category);
-    if (data.visibility) formData.append("visibility", data.visibility);
-    if (data.tags) formData.append("tags", data.tags);
-
-    return axios.post(`${api_instance}/vid/upload`, formData, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "multipart/form-data",
-      },
-      onUploadProgress: (event) => {
-        if (event.total) {
-          const percent = Math.round((event.loaded * 100) / event.total);
-          onProgress(percent);
-        }
-      },
-    });
-  };
-
   const handleSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!token) {
       toast.error(MESSAGES.USER_NOT_AUTHENTICATED);
@@ -411,47 +228,43 @@ export default function UploadPage() {
     setTranscodeProgress(null);
 
     try {
-      const result = await uploadVideoDirect(values, token, setUploadProgress);
-      if (result?.processId) {
-        setUploadProcessId(result.processId);
-      }
-      if (result?.videoId) {
-        setCreatedVideoId(result.videoId);
-      }
-      toast.success("Video uploaded directly to S3! Transcoding queued 🚀");
+      const result = await uploadVideo({
+        file: values.file,
+        meta: values,
+        token,
+        userId: values.userId,
+        onProgress: setUploadProgress,
+        onFallback: (error) => {
+          console.warn("Direct presigned upload failed, falling back to multipart", error);
+          if (isNetworkError(error)) {
+            toast.error("Direct S3 upload failed (CORS or network). Falling back to server upload...");
+          }
+        },
+      });
+      if (result.processId) setUploadProcessId(result.processId);
+      if (result.videoId) setCreatedVideoId(result.videoId);
+      toast.success(
+        result.via === "direct" ? "Video uploaded directly to S3! Transcoding queued 🚀" : MESSAGES.FILE_UPLOADED
+      );
       setIsUploaded(true);
       clearPendingExport();
-      reset({
-        videoTitle: "",
-        description: "",
-        category: "OTHER",
-        visibility: "PUBLIC",
-        tags: "",
-        file: null as unknown as File,
-        userId: user?.userId || "",
-      });
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-    } catch (error: any) {
-      console.warn("Direct presigned upload failed, falling back to multipart", error);
-      const isS3CorsOrNetwork =
-        error?.message?.includes("Network Error") || error?.code === "ERR_NETWORK";
-      if (isS3CorsOrNetwork) {
-        toast.error("Direct S3 upload failed (CORS or network). Falling back to server upload...");
-      }
-      try {
-        const legacyResult = await uploadVideoLegacy(values, token, setUploadProgress);
-        if (legacyResult?.data?.id || legacyResult?.data?.videoId) {
-          setCreatedVideoId(legacyResult.data.id || legacyResult.data.videoId);
+      if (result.via === "direct") {
+        reset({
+          videoTitle: "",
+          description: "",
+          category: "OTHER",
+          visibility: "PUBLIC",
+          tags: "",
+          file: null as unknown as File,
+          userId: user?.userId || "",
+        });
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
         }
-        toast.success(MESSAGES.FILE_UPLOADED);
-        setIsUploaded(true);
-        clearPendingExport();
-      } catch (fallbackErr) {
-        console.error(fallbackErr);
-        toast.error(MESSAGES.FILE_UPLOAD_FAILED);
       }
+    } catch (error) {
+      console.error(error);
+      toast.error(MESSAGES.FILE_UPLOAD_FAILED);
     } finally {
       setTimeout(() => setUploadProgress(0), 1000);
     }

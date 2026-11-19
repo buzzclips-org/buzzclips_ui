@@ -229,7 +229,7 @@ export function LoginForm() {
             <div className="text-center text-sm text-muted-foreground pt-1">
               {t("auth.noAccount")}{" "}
               <Link
-                href="/auth/signup"
+                href={nextPath === "/" ? "/auth/signup" : `/auth/signup?next=${encodeURIComponent(nextPath)}`}
                 className="font-semibold text-primary hover:text-primary/80 transition-colors"
               >
                 {t("auth.signUpButton")}

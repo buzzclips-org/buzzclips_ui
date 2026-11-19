@@ -229,10 +229,10 @@ function ClipPanel({
           </p>
         </div>
         <div className="flex shrink-0 gap-0.5">
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onDuplicate} title="Duplicate (D)" aria-label="Duplicate clip">
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onDuplicate()} title="Duplicate (D)" aria-label="Duplicate clip">
             <Copy className="h-3.5 w-3.5" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-red-500" onClick={onDelete} title="Delete (Del)" aria-label="Delete clip">
+          <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-red-500" onClick={() => onDelete()} title="Delete (Del)" aria-label="Delete clip">
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
         </div>
@@ -487,10 +487,10 @@ function TextPanel({ project, selection, getTime, onSelect, onUpdateText, onGest
             title="Edit text"
             action={
               <div className="flex gap-0.5">
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onDuplicate} title="Duplicate" aria-label="Duplicate text">
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onDuplicate()} title="Duplicate" aria-label="Duplicate text">
                   <Copy className="h-3.5 w-3.5" />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-red-500" onClick={onDelete} title="Delete" aria-label="Delete text">
+                <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-red-500" onClick={() => onDelete()} title="Delete" aria-label="Delete text">
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
               </div>

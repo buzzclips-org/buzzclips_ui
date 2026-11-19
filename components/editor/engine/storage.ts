@@ -18,6 +18,16 @@ export interface PendingExport {
   createdAt: number;
 }
 
+export interface PublishDraft {
+  videoTitle: string;
+  description: string;
+  category: string;
+  visibility: "PUBLIC" | "UNLISTED" | "PRIVATE";
+  tags: string;
+  /** Set right before redirecting to login, so the editor reopens the publish dialog on return. */
+  resume: boolean;
+}
+
 let dbPromise: Promise<IDBDatabase> | null = null;
 
 function openDb(): Promise<IDBDatabase> {
@@ -90,6 +100,16 @@ export async function pruneMedia(keep: Set<string>): Promise<void> {
 
 export async function clearMedia(): Promise<void> {
   try {
+    const keys = await run<IDBValidKey[]>(KV, "readonly", (s) => s.getAllKeys());
+    await Promise.all(
+      keys
+        .filter((k) => String(k).startsWith("insight:"))
+        .map((k) => run(KV, "readwrite", (s) => s.delete(k)))
+    );
+  } catch {
+    // ignore
+  }
+  try {
     await run(MEDIA, "readwrite", (s) => s.clear());
   } catch {
     // ignore
@@ -139,5 +159,49 @@ export async function clearPendingExport(): Promise<void> {
     await run(KV, "readwrite", (s) => s.delete("pendingExport"));
   } catch {
     // ignore
+  }
+}
+
+export async function savePublishDraft(draft: PublishDraft): Promise<boolean> {
+  try {
+    await run(KV, "readwrite", (s) => s.put(draft, "publishDraft"));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function loadPublishDraft(): Promise<PublishDraft | null> {
+  try {
+    const d = await run<PublishDraft | undefined>(KV, "readonly", (s) => s.get("publishDraft"));
+    return d ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function clearPublishDraft(): Promise<void> {
+  try {
+    await run(KV, "readwrite", (s) => s.delete("publishDraft"));
+  } catch {
+    // ignore
+  }
+}
+
+/** Cached timeline visuals (filmstrip, waveform) per asset. */
+export async function saveInsightCache(assetId: string, value: unknown): Promise<void> {
+  try {
+    await run(KV, "readwrite", (s) => s.put(value, `insight:${assetId}`));
+  } catch {
+    // ignore: cache only
+  }
+}
+
+export async function loadInsightCache<T>(assetId: string): Promise<T | null> {
+  try {
+    const v = await run<T | undefined>(KV, "readonly", (s) => s.get(`insight:${assetId}`));
+    return v ?? null;
+  } catch {
+    return null;
   }
 }

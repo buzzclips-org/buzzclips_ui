@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   AlertTriangle,
@@ -25,9 +24,12 @@ import { historyReducer, initHistory } from "@/lib/editor/history";
 import {
   clamp,
   clampTexts,
+  clipDuration,
+  clipStarts,
   createClipFromAsset,
   createId,
   createTextOverlay,
+  locate,
   duplicateClip,
   moveItem,
   removeAssetReferences,
@@ -53,8 +55,10 @@ import { PreviewPanel } from "./PreviewPanel";
 import { Timeline, type Selection } from "./Timeline";
 import { Inspector, type InspectorTab } from "./Inspector";
 import { ExportDialog } from "./ExportDialog";
+import { PublishDialog, type PublishVideo } from "./PublishDialog";
 import { ShortcutsDialog } from "./ShortcutsDialog";
 import { usePreviewPlayer } from "./usePreviewPlayer";
+import { getMediaInsight, type MediaInsight } from "./engine/insights";
 import { ACCEPTED_TYPES, getBrowserSupport, probeFile } from "./engine/probe";
 import {
   clearMedia,
@@ -62,14 +66,15 @@ import {
   loadMedia,
   loadPendingExport,
   loadProject,
+  loadPublishDraft,
   pruneMedia,
   saveMedia,
   savePendingExport,
   saveProject,
+  savePublishDraft,
   type PendingExport,
 } from "./engine/storage";
 
-const UPLOAD_HANDOFF_PATH = "/video/upload?source=editor";
 const MAX_IMPORT_BYTES = 4 * 1024 * 1024 * 1024;
 type SaveState = "idle" | "saving" | "saved" | "error";
 
@@ -83,8 +88,7 @@ export interface EditorPreset {
 }
 
 export default function VideoEditor({ preset }: { preset?: EditorPreset } = {}) {
-  const router = useRouter();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoaded: authLoaded = true } = useAuth();
   const [history, dispatch] = useReducer(historyReducer, undefined, () => initHistory(createEmptyProject()));
   const project = history.present;
   const projectRef = useRef(project);
@@ -98,6 +102,8 @@ export default function VideoEditor({ preset }: { preset?: EditorPreset } = {}) 
   const [showHint, setShowHint] = useState(Boolean(preset?.hint));
   const [importing, setImporting] = useState(0);
   const [exportOpen, setExportOpen] = useState(false);
+  const [publishOpen, setPublishOpen] = useState(false);
+  const [publishVideo, setPublishVideo] = useState<PublishVideo | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
   const [confirmNew, setConfirmNew] = useState(false);
   const [restoring, setRestoring] = useState(true);
@@ -105,6 +111,9 @@ export default function VideoEditor({ preset }: { preset?: EditorPreset } = {}) 
   const [pending, setPending] = useState<PendingExport | null>(null);
   const [mobilePanel, setMobilePanel] = useState<"media" | "edit">("media");
   const [support, setSupport] = useState<{ ok: boolean; reason?: string }>({ ok: true });
+  const [insights, setInsights] = useState<Record<string, MediaInsight>>({});
+  const insightQueue = useRef(new Set<string>());
+  const [timelineH, setTimelineH] = useState(300);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
   const storageWarned = useRef(false);
@@ -132,6 +141,7 @@ export default function VideoEditor({ preset }: { preset?: EditorPreset } = {}) 
   }, []);
 
   const endGroup = useCallback(() => dispatch({ type: "endGroup" }), []);
+  const endGroupRef = useRef(endGroup);
   const undo = useCallback(() => dispatch({ type: "undo" }), []);
   const redo = useCallback(() => dispatch({ type: "redo" }), []);
 
@@ -159,6 +169,57 @@ export default function VideoEditor({ preset }: { preset?: EditorPreset } = {}) 
   useEffect(() => () => Object.values(urlsRef.current).forEach((u) => URL.revokeObjectURL(u)), []);
 
   const getBlob = useCallback((id: string) => blobsRef.current.get(id), []);
+
+  // Filmstrips + waveforms for the timeline, computed one asset at a time in the background.
+  useEffect(() => {
+    let cancelled = false;
+    const queue = insightQueue.current;
+    const pending = project.assets.filter((a) => a.kind !== "image" && !insights[a.id] && !queue.has(a.id) && blobsRef.current.has(a.id));
+    if (!pending.length) return;
+    pending.forEach((a) => queue.add(a.id));
+    (async () => {
+      for (const asset of pending) {
+        const blob = blobsRef.current.get(asset.id);
+        if (!blob) continue;
+        const insight = await getMediaInsight(asset, blob);
+        if (cancelled) return;
+        setInsights((prev) => ({ ...prev, [asset.id]: insight }));
+      }
+    })();
+    return () => {
+      cancelled = true;
+      pending.forEach((a) => queue.delete(a.id));
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [project.assets, mediaUrls]);
+
+  // Timeline height (desktop) is resizable and remembered.
+  useEffect(() => {
+    const saved = Number(localStorage.getItem("buzzclips-editor-timeline-h"));
+    if (saved >= 180 && saved <= 900) setTimelineH(saved);
+  }, []);
+  const startTimelineResize = (e: React.PointerEvent) => {
+    const startY = e.clientY;
+    const startH = timelineH;
+    const target = e.currentTarget as HTMLElement;
+    target.setPointerCapture(e.pointerId);
+    let latest = startH;
+    const move = (ev: PointerEvent) => {
+      latest = clamp(startH - (ev.clientY - startY), 180, Math.max(220, window.innerHeight * 0.65));
+      setTimelineH(latest);
+    };
+    const up = () => {
+      target.removeEventListener("pointermove", move);
+      target.removeEventListener("pointerup", up);
+      try {
+        localStorage.setItem("buzzclips-editor-timeline-h", String(Math.round(latest)));
+      } catch {
+        // ignore
+      }
+    };
+    target.addEventListener("pointermove", move);
+    target.addEventListener("pointerup", up);
+  };
 
   /* ------------------------- restore & autosave ------------------------- */
 
@@ -355,18 +416,61 @@ export default function VideoEditor({ preset }: { preset?: EditorPreset } = {}) 
     [commit]
   );
 
-  const split = useCallback(() => {
-    const { clips, newClipId } = splitAt(projectRef.current.clips, store.get());
-    if (!newClipId) {
-      toast.info("Move the playhead inside a clip (away from its edges) to split it.");
-      return;
-    }
-    commit((p) => ({ ...p, clips }));
-    select({ type: "clip", id: newClipId });
-  }, [commit, select, store]);
+  const splitAtTime = useCallback(
+    (t: number) => {
+      const { clips, newClipId } = splitAt(projectRef.current.clips, t);
+      if (!newClipId) {
+        toast.info("Move the playhead inside a clip (away from its edges) to split it.");
+        return;
+      }
+      commit((p) => ({ ...p, clips }));
+      select({ type: "clip", id: newClipId });
+    },
+    [commit, select]
+  );
+  const split = useCallback(() => splitAtTime(store.get()), [splitAtTime, store]);
 
-  const deleteSelection = useCallback(() => {
-    const s = selection;
+  /** Trims the given clip's start or end to timeline time `t` (ripple: later clips move). */
+  const trimClipTo = useCallback(
+    (id: string, edge: "in" | "out", t: number) => {
+      const clips = projectRef.current.clips;
+      const index = clips.findIndex((c) => c.id === id);
+      if (index === -1) return;
+      const start = clipStarts(clips)[index];
+      const clip = clips[index];
+      const source = clip.in + clamp(t - start, 0, clipDuration(clip)) * clip.speed;
+      trim(id, edge === "in" ? { in: source } : { out: source });
+      endGroupRef.current();
+      if (edge === "in") seek(start);
+      select({ type: "clip", id });
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [select, seek]
+  );
+
+  /** Q / W: trim the clip under the playhead. */
+  const trimToPlayhead = useCallback(
+    (edge: "in" | "out") => {
+      const hit = locate(projectRef.current.clips, store.get());
+      if (!hit) return;
+      trimClipTo(hit.clip.id, edge, store.get());
+    },
+    [store, trimClipTo]
+  );
+
+  const setAllClipsMuted = useCallback(
+    (muted: boolean) => {
+      commit((p) => ({
+        ...p,
+        clips: p.clips.map((c) => (p.assets.find((a) => a.id === c.assetId)?.hasAudio ? { ...c, muted } : c)),
+      }));
+      toast.success(muted ? "All clip audio muted" : "Clip audio unmuted");
+    },
+    [commit]
+  );
+
+  const deleteSelection = useCallback((target?: Selection) => {
+    const s = target ?? selection;
     if (!s) return;
     if (s.type === "clip") {
       const clips = projectRef.current.clips;
@@ -385,8 +489,8 @@ export default function VideoEditor({ preset }: { preset?: EditorPreset } = {}) 
     }
   }, [commit, select, selection]);
 
-  const duplicate = useCallback(() => {
-    const s = selection;
+  const duplicate = useCallback((target?: Selection) => {
+    const s = target ?? selection;
     if (!s) return;
     if (s.type === "clip") {
       const { clips, newClipId } = duplicateClip(projectRef.current.clips, s.id);
@@ -490,6 +594,8 @@ export default function VideoEditor({ preset }: { preset?: EditorPreset } = {}) 
   const newProject = useCallback(async () => {
     pause();
     releaseAllMedia();
+    setInsights({});
+    insightQueue.current.clear();
     await clearMedia();
     const fresh = createEmptyProject();
     projectRef.current = fresh;
@@ -513,22 +619,48 @@ export default function VideoEditor({ preset }: { preset?: EditorPreset } = {}) 
 
   /* ------------------------------ publish ------------------------------ */
 
-  const publish = useCallback(
-    async (blob: Blob, fileName: string) => {
-      const ok = await savePendingExport({ blob, fileName, title: projectRef.current.name, createdAt: Date.now() });
-      if (!ok) {
-        toast.error("Couldn't hand the video over to the uploader. Download it and upload it from the Upload page.");
-        return;
+  /** Opens the in-editor publish dialog. The export is persisted first so a login round-trip can't lose it. */
+  const publish = useCallback(async (blob: Blob, fileName: string) => {
+    const entry: PendingExport = { blob, fileName, title: projectRef.current.name, createdAt: Date.now() };
+    const ok = await savePendingExport(entry);
+    if (!ok) toast.warning("Couldn't save the export in this browser. Stay on this page until publishing finishes.");
+    setPending(entry);
+    setPublishVideo({ blob, fileName });
+    setExportOpen(false);
+    setPublishOpen(true);
+  }, []);
+
+  const flushProject = useCallback(async () => {
+    await saveProject(projectRef.current);
+  }, []);
+
+  // Back from login/sign-up (/?publish=1): reopen the publish dialog with the saved export + details.
+  const resumeChecked = useRef(false);
+  useEffect(() => {
+    if (restoring || !authLoaded || resumeChecked.current) return;
+    resumeChecked.current = true;
+    (async () => {
+      const params = new URLSearchParams(window.location.search);
+      const draft = await loadPublishDraft();
+      const wantsPublish = params.get("publish") === "1" || Boolean(draft?.resume);
+      if (params.has("publish")) {
+        params.delete("publish");
+        const q = params.toString();
+        window.history.replaceState(window.history.state, "", `${window.location.pathname}${q ? `?${q}` : ""}${window.location.hash}`);
       }
-      if (isAuthenticated) {
-        router.push(UPLOAD_HANDOFF_PATH);
+      if (draft?.resume) await savePublishDraft({ ...draft, resume: false });
+      if (!wantsPublish) return;
+      const saved = await loadPendingExport();
+      if (saved) {
+        setPending(saved);
+        setPublishVideo({ blob: saved.blob, fileName: saved.fileName });
+        setPublishOpen(true);
+        if (isAuthenticated) toast.success("Welcome back! Your edit is restored. Finish publishing below.");
       } else {
-        toast.info("Sign in to publish. Your exported video is saved and will be waiting for you.");
-        router.push(`/auth/login?next=${encodeURIComponent(UPLOAD_HANDOFF_PATH)}`);
+        toast.info("Your edit was restored. Export it again to publish.");
       }
-    },
-    [isAuthenticated, router]
-  );
+    })();
+  }, [restoring, authLoaded, isAuthenticated]);
 
   const downloadPending = () => {
     if (!pending) return;
@@ -542,8 +674,8 @@ export default function VideoEditor({ preset }: { preset?: EditorPreset } = {}) 
 
   /* ----------------------------- shortcuts ----------------------------- */
 
-  const actionsRef = useRef({ split, deleteSelection, duplicate, addText, undo, redo, toggle: player.toggle });
-  actionsRef.current = { split, deleteSelection, duplicate, addText, undo, redo, toggle: player.toggle };
+  const actionsRef = useRef({ split, deleteSelection, duplicate, addText, undo, redo, trimToPlayhead, toggle: player.toggle });
+  actionsRef.current = { split, deleteSelection, duplicate, addText, undo, redo, trimToPlayhead, toggle: player.toggle };
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -585,6 +717,12 @@ export default function VideoEditor({ preset }: { preset?: EditorPreset } = {}) 
           break;
         case "d":
           a.duplicate();
+          break;
+        case "q":
+          a.trimToPlayhead("in");
+          break;
+        case "w":
+          a.trimToPlayhead("out");
           break;
         case "t":
           e.preventDefault();
@@ -752,8 +890,15 @@ export default function VideoEditor({ preset }: { preset?: EditorPreset } = {}) 
           <span className="flex-1 min-w-[200px]">
             Your exported video <strong>{pending.fileName}</strong> is ready to publish.
           </span>
-          <Button size="sm" className="h-7 text-xs" onClick={() => publish(pending.blob, pending.fileName)}>
-            {isAuthenticated ? "Publish now" : "Sign in to publish"}
+          <Button
+            size="sm"
+            className="h-7 text-xs"
+            onClick={() => {
+              setPublishVideo({ blob: pending.blob, fileName: pending.fileName });
+              setPublishOpen(true);
+            }}
+          >
+            Publish now
           </Button>
           <Button size="sm" variant="outline" className="h-7 text-xs" onClick={downloadPending}>
             Download
@@ -773,7 +918,7 @@ export default function VideoEditor({ preset }: { preset?: EditorPreset } = {}) 
         </div>
       )}
 
-      <div className="grid flex-1 min-h-0 grid-cols-1 lg:grid-cols-[minmax(220px,260px)_minmax(0,1fr)_minmax(280px,320px)] lg:grid-rows-[minmax(0,1fr)_minmax(180px,230px)]">
+      <div className="grid flex-1 min-h-0 grid-cols-1 lg:grid-cols-[minmax(220px,260px)_minmax(0,1fr)_minmax(280px,320px)] lg:grid-rows-[minmax(0,1fr)_var(--timeline-h)]" style={{ "--timeline-h": `${timelineH}px` } as React.CSSProperties}>
         <aside className="hidden min-h-0 border-r border-border/50 lg:block" aria-label="Media library">
           {library}
         </aside>
@@ -799,12 +944,24 @@ export default function VideoEditor({ preset }: { preset?: EditorPreset } = {}) 
           {inspector}
         </aside>
 
-        <section className="h-[220px] border-t border-border/50 lg:col-span-3 lg:h-auto lg:min-h-0" aria-label="Timeline">
+        <section className="relative h-[300px] border-t border-border/50 lg:col-span-3 lg:h-auto lg:min-h-0" aria-label="Timeline">
+          <div
+            role="separator"
+            aria-orientation="horizontal"
+            aria-label="Drag to resize the timeline"
+            title="Drag to resize the timeline"
+            onPointerDown={startTimelineResize}
+            onDoubleClick={() => setTimelineH(300)}
+            className="absolute -top-1.5 left-0 right-0 z-20 hidden h-3 cursor-row-resize touch-none lg:block group"
+          >
+            <div className="mx-auto mt-1 h-1 w-12 rounded-full bg-border transition-colors group-hover:bg-primary" />
+          </div>
           <Timeline
             clips={project.clips}
             texts={project.texts}
             music={project.music}
             assets={assets}
+            insights={insights}
             total={total}
             store={store}
             selection={selection}
@@ -813,13 +970,22 @@ export default function VideoEditor({ preset }: { preset?: EditorPreset } = {}) 
             onMoveClip={moveClip}
             onInsertAsset={insertAsset}
             onTrimClip={trim}
+            onTrimClipTo={trimClipTo}
+            onUpdateClip={(id, patch) => updateClip(id, patch)}
+            onSetAllClipsMuted={setAllClipsMuted}
             onUpdateText={(id, patch) => updateText(id, patch, `text:${id}:range`)}
             onUpdateMusic={(patch) => updateMusic(patch, "music:drag")}
+            onRemoveMusic={() => {
+              commit((p) => ({ ...p, music: null }));
+              setSelection(null);
+            }}
             onGestureEnd={endGroup}
-            onSplit={split}
+            onSplitAt={splitAtTime}
+            onTrimToPlayhead={trimToPlayhead}
             onDuplicate={duplicate}
             onDelete={deleteSelection}
             onAddText={addText}
+            onRequestImport={requestImport}
           />
         </section>
 
@@ -851,6 +1017,14 @@ export default function VideoEditor({ preset }: { preset?: EditorPreset } = {}) 
         getBlob={getBlob}
         isAuthenticated={isAuthenticated}
         onPublish={publish}
+      />
+      <PublishDialog
+        open={publishOpen}
+        onOpenChange={setPublishOpen}
+        video={publishVideo}
+        defaultTitle={pending?.title || project.name}
+        beforeAuthRedirect={flushProject}
+        onPublished={() => setPending(null)}
       />
       <ShortcutsDialog open={helpOpen} onOpenChange={setHelpOpen} />
       <AlertDialog open={confirmNew} onOpenChange={setConfirmNew}>

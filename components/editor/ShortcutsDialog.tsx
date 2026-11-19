@@ -6,6 +6,8 @@ import { Kbd } from "./controls";
 const SHORTCUTS: [string[], string][] = [
   [["Space"], "Play / pause"],
   [["S"], "Split clip at playhead"],
+  [["Q"], "Trim clip start to playhead"],
+  [["W"], "Trim clip end to playhead"],
   [["T"], "Add text at playhead"],
   [["D"], "Duplicate selected clip or text"],
   [["Del"], "Delete selection"],
@@ -15,7 +17,9 @@ const SHORTCUTS: [string[], string][] = [
   [["Home", "End"], "Go to start / end"],
   [["Ctrl/⌘", "Z"], "Undo"],
   [["Ctrl/⌘", "Shift", "Z"], "Redo"],
-  [["Ctrl/⌘", "Scroll"], "Zoom timeline"],
+  [["+", "−"], "Zoom timeline in / out"],
+  [["0"], "Fit whole video in timeline"],
+  [["Ctrl/⌘", "Scroll"], "Zoom timeline at cursor"],
   [["Esc"], "Clear selection"],
   [["?"], "Show this help"],
 ];
@@ -42,6 +46,8 @@ export function ShortcutsDialog({ open, onOpenChange }: { open: boolean; onOpenC
         </ul>
         <div className="space-y-1 rounded-lg bg-muted/40 p-3 text-xs text-muted-foreground">
           <p>• Drag clips on the timeline to reorder them; drag their edges to trim.</p>
+          <p>• Right-click a clip, text or music block for quick actions like split, speed and mute.</p>
+          <p>• Drag the bar above the timeline to make it taller. Double-click the bar to reset.</p>
           <p>• Drag files from your computer anywhere onto the editor, or paste them.</p>
           <p>• Your project autosaves in this browser, so you can close the tab and come back later.</p>
         </div>

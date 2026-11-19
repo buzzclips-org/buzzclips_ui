@@ -3,7 +3,7 @@
 import * as z from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -34,6 +34,7 @@ import { Eye, EyeOff, Mail, Lock, User, AtSign, ArrowRight, Loader2, UserPlus, C
 import { useUsernameAvailability, cleanHandle } from "@/utility/useUsernameAvailability";
 import { GoogleSignInButton } from "./GoogleSignInButton";
 import { useLanguage } from "@/store/language-context";
+import { safeRedirectPath } from "@/utility/redirect";
 
 const formSchema = z.object({
   fullName: z.string().max(100, { message: "Name must be under 100 characters" }).optional(),
@@ -48,6 +49,12 @@ const formSchema = z.object({
 export function SignUpForm() {
   const { t } = useLanguage();
   const [showPassword, setShowPassword] = useState(false);
+  // Optional return path (e.g. back to the editor to publish). Read on the client to avoid a Suspense boundary.
+  const [nextPath, setNextPath] = useState("");
+  useEffect(() => {
+    setNextPath(safeRedirectPath(new URLSearchParams(window.location.search).get("next"), ""));
+  }, []);
+  const nextQuery = nextPath ? `next=${encodeURIComponent(nextPath)}` : "";
   const { setUsername, status, message, isAvailable, isChecking } =
     useUsernameAvailability();
 
@@ -80,7 +87,7 @@ export function SignUpForm() {
       });
       toast.success(MESSAGES.ACCOUNT_CREATED);
       setTimeout(() => {
-        redirect("/auth/login?status=account-created", RedirectType.replace);
+        redirect(`/auth/login?status=account-created${nextQuery ? `&${nextQuery}` : ""}`, RedirectType.replace);
       }, 500);
     } catch (err) {
       toast.error(MESSAGES.ACCOUNT_CREATION_FAILED + `: ${err}`);
@@ -101,7 +108,7 @@ export function SignUpForm() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <GoogleSignInButton mode="signup" />
+        <GoogleSignInButton mode="signup" callbackUrl={nextPath || undefined} />
 
         <div className="relative my-3">
           <div className="absolute inset-0 flex items-center">
@@ -321,7 +328,7 @@ export function SignUpForm() {
         <div className="text-center text-sm text-muted-foreground pt-1">
           {t("auth.hasAccount")}{" "}
           <Link
-            href="/auth/login"
+            href={`/auth/login${nextQuery ? `?${nextQuery}` : ""}`}
             className="font-semibold text-primary hover:text-primary/80 transition-colors"
           >
             {t("auth.signInButton")}

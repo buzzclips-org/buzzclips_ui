@@ -225,7 +225,7 @@ export function ExportDialog({ open, onOpenChange, project, getBlob, isAuthentic
               </Button>
               <Button onClick={() => onPublish(status.result.blob, fileName)} className="gap-1.5">
                 {isAuthenticated ? <UploadCloud className="h-4 w-4" /> : <LogIn className="h-4 w-4" />}
-                {isAuthenticated ? "Publish to BuzzClips" : "Sign in to publish"}
+                Publish to BuzzClips
               </Button>
             </>
           )}
