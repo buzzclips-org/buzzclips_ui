@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { EDITOR_TOOLS } from "@/constants/editorTools";
 import {
   Scissors,
   Combine,
@@ -342,6 +343,25 @@ export default function EditorSeoContent() {
             ))}
           </div>
         </div>
+
+        {/* Task-specific tools */}
+        <nav aria-label="Free video tools" className="space-y-5">
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+            Free video tools for specific jobs
+          </h2>
+          <ul className="flex flex-wrap gap-2">
+            {EDITOR_TOOLS.map((tool) => (
+              <li key={tool.slug}>
+                <Link
+                  href={`/tools/${tool.slug}`}
+                  className="inline-flex items-center rounded-full border border-border/60 bg-card/60 px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
+                >
+                  {tool.name}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
 
         {/* Internal links */}
         <div className="space-y-5">

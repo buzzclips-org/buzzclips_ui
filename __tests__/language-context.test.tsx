@@ -151,10 +151,11 @@ describe("Language Context & Switcher", () => {
   it("generates correct hreflang alternate links for SEO", () => {
     const alternates = generateHreflangAlternates("https://buzzclips.app/watch/clip-123");
     expect(alternates["x-default"]).toBe("https://buzzclips.app/watch/clip-123");
-    expect(alternates["en"]).toBe("https://buzzclips.app/watch/clip-123?hl=en");
-    expect(alternates["hi"]).toBe("https://buzzclips.app/watch/clip-123?hl=hi");
-    expect(alternates["es"]).toBe("https://buzzclips.app/watch/clip-123?hl=es");
-    expect(Object.keys(alternates).length).toBe(13); // 12 languages + x-default
+    expect(alternates["en"]).toBe("https://buzzclips.app/watch/clip-123");
+    // Content is server-rendered in English only, so no ?hl= variants are advertised.
+    expect(alternates["hi"]).toBeUndefined();
+    expect(Object.keys(alternates)).toEqual(["x-default", "en"]);
+    expect(generateHreflangAlternates("https://buzzclips.app/a?x=1")["en"]).toBe("https://buzzclips.app/a");
   });
 
   it("renders LanguageNoticeBanner when locale is not English and switches to English on click", () => {

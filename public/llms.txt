@@ -1,0 +1,37 @@
+# BuzzClips
+
+> BuzzClips (https://buzzclips.app) is a free online video editor that runs entirely in the web browser, plus a video streaming platform with creator uploads, Reels and free Indian live TV.
+
+The editor uses WebCodecs, so videos are processed on the user's own device and are not uploaded unless the user chooses to publish to BuzzClips. It is free, adds no watermark, and needs no signup to edit or export.
+
+## Video editor
+
+- [Free online video editor](https://buzzclips.app/): trim, split, merge and reorder clips; per-clip speed (0.25x-4x), volume, rotate, flip, fit/fill framing and filters; text overlays; background music; 16:9, 9:16, 1:1 and 4:5 canvases; 480p/720p/1080p at 24/30/60 fps; MP4 export.
+- [All free video tools](https://buzzclips.app/tools)
+- [Trim video](https://buzzclips.app/tools/trim-video)
+- [Cut / split video](https://buzzclips.app/tools/cut-video)
+- [Merge videos](https://buzzclips.app/tools/merge-videos)
+- [Crop video to an aspect ratio](https://buzzclips.app/tools/crop-video)
+- [Resize video for social platforms](https://buzzclips.app/tools/resize-video)
+- [Rotate / flip video](https://buzzclips.app/tools/rotate-video)
+- [Add text to video](https://buzzclips.app/tools/add-text-to-video)
+- [Add music to video](https://buzzclips.app/tools/add-music-to-video)
+- [Change video speed](https://buzzclips.app/tools/change-video-speed)
+- [Mute video](https://buzzclips.app/tools/mute-video)
+- [Photo to video / slideshow maker](https://buzzclips.app/tools/photo-to-video)
+- [Video filters](https://buzzclips.app/tools/video-filters)
+- [Instagram Reels editor](https://buzzclips.app/tools/instagram-reels-editor)
+- [TikTok video editor](https://buzzclips.app/tools/tiktok-video-editor)
+- [YouTube Shorts maker](https://buzzclips.app/tools/youtube-shorts-maker)
+- [YouTube video editor](https://buzzclips.app/tools/youtube-video-editor)
+
+## Limitations (what the editor does not do)
+
+No AI features, automatic captions, transitions other than a fade from/to black, free-form crop, keyframes, 4K or GIF export. Requires a recent Chrome, Edge, Safari (16.4+) or Firefox (130+).
+
+## Watch
+
+- [Explore videos](https://buzzclips.app/explore)
+- [Trending](https://buzzclips.app/trending)
+- [Reels & Shorts](https://buzzclips.app/reels)
+- [Free Indian live TV](https://buzzclips.app/tv)

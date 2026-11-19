@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import EditorLoader from "@/components/editor/EditorLoader";
 import EditorSeoContent from "@/components/editor/EditorSeoContent";
+import EditorHeading from "@/components/editor/EditorHeading";
 import {
   SITE_URL,
   generateHreflangAlternates,
@@ -75,11 +76,13 @@ export default function HomePage() {
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqSchema) }}
       />
 
-      <h1 className="sr-only">
-        Free Online Video Editor - Trim, Cut, Merge and Add Text or Music to
-        Videos in Your Browser
-      </h1>
-      <EditorLoader />
+      <div style={{ "--editor-offset": "40px" } as React.CSSProperties}>
+        <EditorHeading
+          title="Free Online Video Editor"
+          tagline="Trim, cut, merge, add text & music. No watermark, no signup, and your files never leave your device."
+        />
+        <EditorLoader />
+      </div>
       <EditorSeoContent />
     </>
   );

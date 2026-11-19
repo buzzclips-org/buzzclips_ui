@@ -12,6 +12,7 @@ import {
   generateChannelListSchema,
   generateSingleChannelFaqSchema,
   generateHreflangAlternates,
+  serializeJsonLd,
 } from "@/utility/seo";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Radio, Tv, Zap, Sparkles, ShieldCheck } from "lucide-react";
@@ -153,28 +154,28 @@ export default async function ChannelLivePage({ params }: ChannelPageProps) {
         id="channel-livetv-schema"
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(liveTvSchema),
+          __html: serializeJsonLd(liveTvSchema),
         }}
       />
       <script
         id="channel-breadcrumbs-schema"
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(breadcrumbsSchema),
+          __html: serializeJsonLd(breadcrumbsSchema),
         }}
       />
       <script
         id="channel-directory-schema"
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(channelListSchema),
+          __html: serializeJsonLd(channelListSchema),
         }}
       />
       <script
         id="channel-faq-schema"
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(faqSchema),
+          __html: serializeJsonLd(faqSchema),
         }}
       />
 

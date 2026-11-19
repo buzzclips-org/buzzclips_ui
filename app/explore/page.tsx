@@ -2,7 +2,12 @@ import { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
 import { fetchVideos } from "@/utility/requests";
-import { SITE_URL, generateFaqSchema, generateHreflangAlternates } from "@/utility/seo";
+import {
+  SITE_URL,
+  generateFaqPageSchema,
+  generateHreflangAlternates,
+  serializeJsonLd,
+} from "@/utility/seo";
 import { PaginatedVideoResponse, VideoDTO } from "@/types/video";
 import ExploreClient from "@/components/explore/ExploreClient";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -187,7 +192,10 @@ export default async function ExplorePage() {
     })),
   };
 
-  const faqSchema = generateFaqSchema(SITE_URL);
+  // Mirror the FAQ text that is actually rendered below (Google requires schema to match visible content).
+  const faqSchema = generateFaqPageSchema(
+    FAQS.map((faq) => ({ question: faq.q, answer: faq.a }))
+  );
 
   return (
     <>
@@ -196,7 +204,7 @@ export default async function ExplorePage() {
           id="home-itemlist-schema"
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(itemListSchema),
+            __html: serializeJsonLd(itemListSchema),
           }}
         />
       )}
@@ -205,7 +213,7 @@ export default async function ExplorePage() {
         id="home-faq-schema"
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(faqSchema),
+          __html: serializeJsonLd(faqSchema),
         }}
       />
 

@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { searchVideos } from "@/utility/requests";
-import { SITE_URL, generateBreadcrumbSchema } from "@/utility/seo";
+import { SITE_URL, generateBreadcrumbSchema, serializeJsonLd } from "@/utility/seo";
 import { VideoDTO } from "@/types/video";
 import ExploreClient from "@/components/explore/ExploreClient";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -111,13 +111,13 @@ export default async function TagPage({ params }: TagPageProps) {
       <script
         id="tag-breadcrumb-schema"
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbSchema) }}
       />
       {initialVideos.length > 0 && (
         <script
           id="tag-itemlist-schema"
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(itemListSchema) }}
         />
       )}
 

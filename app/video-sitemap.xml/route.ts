@@ -1,7 +1,6 @@
 import { api_instance } from "@/global";
 import { PaginatedVideoResponse, VideoDTO } from "@/types/video";
-import { SITE_URL } from "@/utility/seo";
-import { SUPPORTED_LANGUAGES } from "@/constants/locales";
+import { SITE_URL, hreflangSitemapLinks } from "@/utility/seo";
 import { ALL_LIVE_CHANNELS } from "@/constants/liveChannels";
 
 function escapeXml(str: string): string {
@@ -100,15 +99,7 @@ export async function GET() {
         .map((tag) => `      <video:tag>${escapeXml(tag)}</video:tag>`)
         .join("\n");
 
-      const alternatesXml = [
-        `    <xhtml:link rel="alternate" hreflang="x-default" href="${escapeXml(watchUrl)}" />`,
-        ...SUPPORTED_LANGUAGES.map(
-          (lang) =>
-            `    <xhtml:link rel="alternate" hreflang="${lang.code}" href="${escapeXml(
-              watchUrl
-            )}?hl=${lang.code}" />`
-        ),
-      ].join("\n");
+      const alternatesXml = hreflangSitemapLinks(watchUrl);
 
       return `  <url>
     <loc>${escapeXml(watchUrl)}</loc>
@@ -171,15 +162,7 @@ ${tagsXml ? tagsXml + "\n" : ""}    </video:video>
       .map((tag) => `      <video:tag>${escapeXml(tag)}</video:tag>`)
       .join("\n");
 
-    const alternatesXml = [
-      `    <xhtml:link rel="alternate" hreflang="x-default" href="${escapeXml(channelUrl)}" />`,
-      ...SUPPORTED_LANGUAGES.map(
-        (lang) =>
-          `    <xhtml:link rel="alternate" hreflang="${lang.code}" href="${escapeXml(
-            channelUrl
-          )}?hl=${lang.code}" />`
-      ),
-    ].join("\n");
+    const alternatesXml = hreflangSitemapLinks(channelUrl);
 
     return `  <url>
     <loc>${escapeXml(channelUrl)}</loc>

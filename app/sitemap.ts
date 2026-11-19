@@ -3,6 +3,7 @@ import { api_instance } from "@/global";
 import { PaginatedVideoResponse } from "@/types/video";
 import { SITE_URL, generateHreflangAlternates } from "@/utility/seo";
 import { ALL_LIVE_CHANNELS } from "@/constants/liveChannels";
+import { EDITOR_TOOLS } from "@/constants/editorTools";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = SITE_URL;
@@ -26,6 +27,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         languages: generateHreflangAlternates(`${baseUrl}/explore`),
       },
     },
+    {
+      url: `${baseUrl}/tools`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.9,
+      alternates: {
+        languages: generateHreflangAlternates(`${baseUrl}/tools`),
+      },
+    },
+    ...EDITOR_TOOLS.map((tool) => ({
+      url: `${baseUrl}/tools/${tool.slug}`,
+      lastModified: new Date(),
+      changeFrequency: "weekly" as const,
+      priority: 0.8,
+      alternates: {
+        languages: generateHreflangAlternates(`${baseUrl}/tools/${tool.slug}`),
+      },
+    })),
     {
       url: `${baseUrl}/tv`,
       lastModified: new Date(),

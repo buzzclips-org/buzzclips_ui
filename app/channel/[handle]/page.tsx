@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getPublicUser, getPublicUserVideos } from "@/utility/requests";
-import { SITE_URL } from "@/utility/seo";
+import { SITE_URL, serializeJsonLd } from "@/utility/seo";
 import VideoCard from "@/components/video/VideoCard";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -145,7 +145,7 @@ export default async function ChannelPage({
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(profilePageSchema) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(profilePageSchema) }}
       />
 
       <div className="w-full flex justify-center py-6">

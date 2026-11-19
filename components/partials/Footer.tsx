@@ -102,6 +102,11 @@ export function Footer() {
                   </Link>
                 </li>
                 <li>
+                  <Link href="/tools" className="hover:text-foreground transition-colors">
+                    Video Tools
+                  </Link>
+                </li>
+                <li>
                   <Link href="/explore" className="hover:text-foreground transition-colors">
                     Explore Videos
                   </Link>

@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getPublicUser, getPublicUserVideos } from "@/utility/requests";
-import { SITE_URL, generateProfilePageSchema } from "@/utility/seo";
+import { SITE_URL, generateProfilePageSchema, serializeJsonLd } from "@/utility/seo";
 import VideoCard from "@/components/video/VideoCard";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -128,7 +128,7 @@ export default async function ProfilePage({
         id="profile-schema-jsonld"
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(profileSchema),
+          __html: serializeJsonLd(profileSchema),
         }}
       />
       <div className="w-full flex justify-center py-6">

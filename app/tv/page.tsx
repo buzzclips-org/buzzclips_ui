@@ -12,6 +12,7 @@ import {
   generateChannelListSchema,
   generateLiveTvFaqSchema,
   generateHreflangAlternates,
+  serializeJsonLd,
 } from "@/utility/seo";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Radio, Tv, Zap, Sparkles, Globe } from "lucide-react";
@@ -131,28 +132,28 @@ export default async function LiveTvPage({ searchParams }: LiveTvPageProps) {
         id="livetv-broadcast-schema"
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(liveTvSchema),
+          __html: serializeJsonLd(liveTvSchema),
         }}
       />
       <script
         id="livetv-breadcrumbs-schema"
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(breadcrumbsSchema),
+          __html: serializeJsonLd(breadcrumbsSchema),
         }}
       />
       <script
         id="livetv-channellist-schema"
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(channelListSchema),
+          __html: serializeJsonLd(channelListSchema),
         }}
       />
       <script
         id="livetv-faq-schema"
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(faqSchema),
+          __html: serializeJsonLd(faqSchema),
         }}
       />
 

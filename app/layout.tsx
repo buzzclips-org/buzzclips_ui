@@ -32,6 +32,7 @@ import {
   generateOrganizationSchema,
   generateSiteNavigationSchema,
   generateSoftwareApplicationSchema,
+  serializeJsonLd,
 } from "@/utility/seo";
 import { ALL_SEO_BUZZWORDS } from "@/constants/seoKeywords";
 
@@ -165,28 +166,28 @@ export default function RootLayout({
           id="global-website-schema"
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(websiteSchema),
+            __html: serializeJsonLd(websiteSchema),
           }}
         />
         <script
           id="global-org-schema"
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(organizationSchema),
+            __html: serializeJsonLd(organizationSchema),
           }}
         />
         <script
           id="global-sitenav-schema"
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(siteNavSchema),
+            __html: serializeJsonLd(siteNavSchema),
           }}
         />
         <script
           id="global-webapp-schema"
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(softwareAppSchema),
+            __html: serializeJsonLd(softwareAppSchema),
           }}
         />
       </head>

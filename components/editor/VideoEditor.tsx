@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   AlertTriangle,
+  Lightbulb,
   CheckCircle2,
   Cloud,
   CloudOff,
@@ -18,7 +19,7 @@ import {
   X,
 } from "lucide-react";
 import { useAuth } from "@/store/auth-context";
-import type { Clip, MediaAsset, MusicTrack, Project, ProjectSettings, TextOverlay } from "@/lib/editor/types";
+import type { AspectRatio, Clip, MediaAsset, MusicTrack, Project, ProjectSettings, TextOverlay } from "@/lib/editor/types";
 import { createEmptyProject, MAX_SPEED, MIN_SPEED } from "@/lib/editor/types";
 import { historyReducer, initHistory } from "@/lib/editor/history";
 import {
@@ -72,7 +73,16 @@ const UPLOAD_HANDOFF_PATH = "/video/upload?source=editor";
 const MAX_IMPORT_BYTES = 4 * 1024 * 1024 * 1024;
 type SaveState = "idle" | "saving" | "saved" | "error";
 
-export default function VideoEditor() {
+export interface EditorPreset {
+  /** Canvas shape for a fresh project (e.g. 9:16 on the Reels landing page). */
+  aspect?: AspectRatio;
+  /** Panel to open first. */
+  panel?: InspectorTab;
+  /** Short task-specific tip shown above the editor. */
+  hint?: string;
+}
+
+export default function VideoEditor({ preset }: { preset?: EditorPreset } = {}) {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
   const [history, dispatch] = useReducer(historyReducer, undefined, () => initHistory(createEmptyProject()));
@@ -84,7 +94,8 @@ export default function VideoEditor() {
   const urlsRef = useRef<Record<string, string>>({});
   const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({});
   const [selection, setSelection] = useState<Selection>(null);
-  const [tab, setTab] = useState<InspectorTab>("project");
+  const [tab, setTab] = useState<InspectorTab>(preset?.panel ?? "project");
+  const [showHint, setShowHint] = useState(Boolean(preset?.hint));
   const [importing, setImporting] = useState(0);
   const [exportOpen, setExportOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -183,11 +194,18 @@ export default function VideoEditor() {
           toast.warning(`${missing.length} media file${missing.length > 1 ? "s" : ""} couldn't be restored. Please re-import.`);
         }
       }
+      const current = projectRef.current;
+      if (preset?.aspect && current.clips.length === 0 && current.settings.aspect !== preset.aspect) {
+        const withPreset = { ...current, settings: { ...current.settings, aspect: preset.aspect } };
+        projectRef.current = withPreset;
+        dispatch({ type: "replace", project: withPreset });
+      }
       setRestoring(false);
     })();
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [registerBlob]);
 
   useEffect(() => {
@@ -245,7 +263,7 @@ export default function VideoEditor() {
         let settings = p.settings;
         let name = p.name;
         const firstVisual = added.find((a) => a.kind !== "audio");
-        if (p.clips.length === 0 && firstVisual && firstVisual.width && firstVisual.height) {
+        if (!preset?.aspect && p.clips.length === 0 && firstVisual && firstVisual.width && firstVisual.height) {
           const r = firstVisual.width / firstVisual.height;
           const aspect = r < 0.7 ? "9:16" : r < 0.9 ? "4:5" : r <= 1.1 ? "1:1" : "16:9";
           if (aspect !== settings.aspect) {
@@ -264,7 +282,7 @@ export default function VideoEditor() {
       const parts = [visual && `${visual} clip${visual > 1 ? "s" : ""} added to the timeline`, audio && `${audio} audio file${audio > 1 ? "s" : ""} imported`].filter(Boolean);
       toast.success(parts.join(", "), aspectNote ? { description: `Canvas set to ${aspectNote} to match your media. Change it in the Project tab.` } : undefined);
     },
-    [commit, registerBlob, support]
+    [commit, registerBlob, support, preset?.aspect]
   );
 
   // Paste files from clipboard.
@@ -482,6 +500,17 @@ export default function VideoEditor() {
     toast.success("Started a new project");
   }, [pause, releaseAllMedia, seek]);
 
+  // Keep tool-page presets for brand-new projects too.
+  const newProjectWithPreset = useCallback(async () => {
+    await newProject();
+    if (preset?.aspect) {
+      const fresh = { ...projectRef.current, settings: { ...projectRef.current.settings, aspect: preset.aspect } };
+      projectRef.current = fresh;
+      dispatch({ type: "replace", project: fresh });
+    }
+    if (preset?.panel) setTab(preset.panel);
+  }, [newProject, preset?.aspect, preset?.panel]);
+
   /* ------------------------------ publish ------------------------------ */
 
   const publish = useCallback(
@@ -641,7 +670,7 @@ export default function VideoEditor() {
 
   return (
     <div
-      className="flex w-full flex-col bg-background/60 pb-20 md:pb-0 lg:h-[calc(100dvh-61px)] lg:min-h-[640px]"
+      className="flex w-full flex-col bg-background/60 pb-20 md:pb-0 lg:h-[calc(100dvh-61px-var(--editor-offset,0px))] lg:min-h-[640px]"
       onDragOver={(e) => e.dataTransfer.types.includes("Files") && e.preventDefault()}
       onDrop={(e) => {
         if (e.dataTransfer.files.length && !e.defaultPrevented) {
@@ -699,6 +728,16 @@ export default function VideoEditor() {
           </Button>
         </div>
       </div>
+
+      {showHint && preset?.hint && (
+        <div className="flex items-center gap-2 border-b border-border/50 bg-muted/40 px-4 py-1.5 text-xs">
+          <Lightbulb className="h-3.5 w-3.5 shrink-0 text-amber-500" />
+          <span className="flex-1">{preset.hint}</span>
+          <button type="button" onClick={() => setShowHint(false)} aria-label="Dismiss tip" className="rounded p-0.5 text-muted-foreground hover:text-foreground">
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
 
       {!support.ok && (
         <div className="flex items-start gap-2 border-b border-amber-500/40 bg-amber-500/10 px-4 py-2 text-xs">
@@ -824,7 +863,7 @@ export default function VideoEditor() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={newProject}>Start new project</AlertDialogAction>
+            <AlertDialogAction onClick={newProjectWithPreset}>Start new project</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

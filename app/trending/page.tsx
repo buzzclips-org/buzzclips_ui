@@ -6,7 +6,7 @@ import VideoCard from "@/components/video/VideoCard";
 import { Flame, TrendingUp, ArrowLeft } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { SITE_URL, generateBreadcrumbSchema } from "@/utility/seo";
+import { SITE_URL, generateBreadcrumbSchema, serializeJsonLd } from "@/utility/seo";
 
 export const revalidate = 60;
 
@@ -50,7 +50,7 @@ export default async function TrendingPage() {
         id="trending-breadcrumb-schema"
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(breadcrumbSchema),
+          __html: serializeJsonLd(breadcrumbSchema),
         }}
       />
       <div className="w-full flex justify-center py-6 sm:py-10 px-4">

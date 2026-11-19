@@ -17,17 +17,33 @@ export function serializeJsonLd(schema: unknown): string {
 }
 
 /**
- * Generates Next.js metadata alternates.languages map for all 12 supported languages + x-default.
+ * Generates the Next.js `alternates.languages` map.
+ *
+ * Pages are server-rendered in English only (UI language switching happens client-side),
+ * so we deliberately do NOT advertise `?hl=xx` variants: hreflang targets must be
+ * distinct, self-canonical, translated pages, otherwise Google ignores them and flags
+ * conflicting canonical signals. Add locales here once translated server HTML exists.
  */
 export function generateHreflangAlternates(canonicalUrl: string): Record<string, string> {
   const cleanUrl = canonicalUrl.split("?")[0];
-  const alternates: Record<string, string> = {
+  return {
     "x-default": cleanUrl,
+    en: cleanUrl,
   };
-  for (const lang of SUPPORTED_LANGUAGES) {
-    alternates[lang.code] = `${cleanUrl}?hl=${lang.code}`;
-  }
-  return alternates;
+}
+
+/** Same rule as above, as sitemap `<xhtml:link>` entries. */
+export function hreflangSitemapLinks(canonicalUrl: string, indent = "    "): string {
+  return Object.entries(generateHreflangAlternates(canonicalUrl))
+    .map(
+      ([lang, href]) =>
+        `${indent}<xhtml:link rel="alternate" hreflang="${lang}" href="${href
+          .replace(/&/g, "&amp;")
+          .replace(/"/g, "&quot;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")}" />`
+    )
+    .join("\n");
 }
 
 /**
@@ -793,11 +809,12 @@ export function generateVideoEditorHowToSchema(siteUrl: string = SITE_URL) {
 /**
  * Schema.org FAQPage structured data for the free online video editor.
  */
-export function generateVideoEditorFaqSchema() {
+/** FAQPage JSON-LD from a list of visible FAQs (schema must mirror on-page text). */
+export function generateFaqPageSchema(faqs: { question: string; answer: string }[]) {
   return {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    mainEntity: VIDEO_EDITOR_FAQS.map((faq) => ({
+    mainEntity: faqs.map((faq) => ({
       "@type": "Question",
       name: faq.question,
       acceptedAnswer: {
@@ -806,4 +823,8 @@ export function generateVideoEditorFaqSchema() {
       },
     })),
   };
+}
+
+export function generateVideoEditorFaqSchema() {
+  return generateFaqPageSchema(VIDEO_EDITOR_FAQS);
 }

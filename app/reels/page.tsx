@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import { fetchTrendingVideos, fetchVideos } from "@/utility/requests";
 import { VideoDTO } from "@/types/video";
 import { ReelsContainer } from "@/components/reels/ReelsContainer";
-import { SITE_URL, generateBreadcrumbSchema } from "@/utility/seo";
+import { SITE_URL, generateBreadcrumbSchema, serializeJsonLd } from "@/utility/seo";
 
 export const revalidate = 60;
 
@@ -91,7 +91,7 @@ export default async function ReelsPage() {
         id="reels-breadcrumbs-schema"
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(breadcrumbsSchema),
+          __html: serializeJsonLd(breadcrumbsSchema),
         }}
       />
       <ReelsContainer initialVideos={playableReels.length > 0 ? playableReels : reelsVideos} />

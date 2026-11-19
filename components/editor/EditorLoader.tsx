@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { Loader2 } from "lucide-react";
+import type { EditorPreset } from "./VideoEditor";
 
 const VideoEditor = dynamic(() => import("./VideoEditor"), {
   ssr: false,
@@ -13,6 +14,6 @@ const VideoEditor = dynamic(() => import("./VideoEditor"), {
   ),
 });
 
-export default function EditorLoader() {
-  return <VideoEditor />;
+export default function EditorLoader({ preset }: { preset?: EditorPreset }) {
+  return <VideoEditor preset={preset} />;
 }
