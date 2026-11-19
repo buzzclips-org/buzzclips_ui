@@ -249,13 +249,6 @@ export function generateSoftwareApplicationSchema(siteUrl: string = SITE_URL) {
       price: "0",
       priceCurrency: "USD",
     },
-    aggregateRating: {
-      "@type": "AggregateRating",
-      ratingValue: "4.9",
-      ratingCount: "1250",
-      bestRating: "5",
-      worstRating: "1",
-    },
     featureList: [
       "Free In-Browser Video Editor (No Watermark, No Upload Required)",
       "Trim, Cut, Split & Merge Video Clips",

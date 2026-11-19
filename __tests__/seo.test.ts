@@ -424,6 +424,8 @@ describe("SEO & Indexing Infrastructure", () => {
         expect(schema.name).toBe("BuzzClips");
         expect(schema.applicationCategory).toBe("MultimediaApplication");
         expect(schema.offers.price).toBe("0");
+        // No self-asserted ratings: Google treats invented aggregateRating as spammy structured data.
+        expect(schema).not.toHaveProperty("aggregateRating");
         expect(schema.featureList).toBeInstanceOf(Array);
         expect(
           schema.featureList.some((f: string) => f.includes("Video Editor"))
