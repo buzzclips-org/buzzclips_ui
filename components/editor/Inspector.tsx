@@ -50,6 +50,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { ColorField, PanelSection, Segmented, SliderField } from "./controls";
+import { StorageInfo } from "./StorageInfo";
 import type { Selection } from "./Timeline";
 
 export type InspectorTab = "clip" | "text" | "audio" | "project";
@@ -813,6 +814,8 @@ function ProjectPanel({ project, onUpdateSettings, onApplyToAllClips, onGestureE
         />
         <p className="text-[10px] text-muted-foreground">Fades apply to both picture and sound.</p>
       </PanelSection>
+
+      <StorageInfo keepAssetIds={project.assets.map((a) => a.id)} />
     </div>
   );
 }

@@ -67,6 +67,7 @@ import {
   loadPendingExport,
   loadProject,
   loadPublishDraft,
+  pruneExports,
   pruneMedia,
   saveMedia,
   savePendingExport,
@@ -109,6 +110,8 @@ export default function VideoEditor({ preset }: { preset?: EditorPreset } = {}) 
   const [restoring, setRestoring] = useState(true);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [pending, setPending] = useState<PendingExport | null>(null);
+  const pendingRef = useRef<PendingExport | null>(null);
+  pendingRef.current = pending;
   const [mobilePanel, setMobilePanel] = useState<"media" | "edit">("media");
   const [support, setSupport] = useState<{ ok: boolean; reason?: string }>({ ok: true });
   const [insights, setInsights] = useState<Record<string, MediaInsight>>({});
@@ -229,6 +232,8 @@ export default function VideoEditor({ preset }: { preset?: EditorPreset } = {}) 
       const [saved, pendingExport] = await Promise.all([loadProject(), loadPendingExport()]);
       if (cancelled) return;
       if (pendingExport) setPending(pendingExport);
+      // Drop exported MP4s left over from earlier sessions (keep the one waiting to be published).
+      pruneExports([pendingExport?.opfsName]);
       if (saved && (saved.assets.length || saved.clips.length || saved.texts.length)) {
         let restored: Project = { ...saved, assets: [] };
         const missing: MediaAsset[] = [];
@@ -294,10 +299,13 @@ export default function VideoEditor({ preset }: { preset?: EditorPreset } = {}) 
           if (file.size > MAX_IMPORT_BYTES) throw new Error(`"${file.name}" is larger than 4 GB, which is too big to edit in a browser.`);
           const asset = await probeFile(file);
           registerBlob(asset.id, file);
-          saveMedia(asset.id, file).then((ok) => {
-            if (!ok && !storageWarned.current) {
+          saveMedia(asset.id, file).then((res) => {
+            if (!res.ok && !storageWarned.current) {
               storageWarned.current = true;
-              toast.warning("Browser storage is full, so media won't be restored after a reload. Your edits still work.");
+              toast.warning(res.message, {
+                description: "Editing still works. Media just won't be restored if you reload the page.",
+                duration: 8000,
+              });
             }
           });
           added.push(asset);
@@ -620,8 +628,8 @@ export default function VideoEditor({ preset }: { preset?: EditorPreset } = {}) 
   /* ------------------------------ publish ------------------------------ */
 
   /** Opens the in-editor publish dialog. The export is persisted first so a login round-trip can't lose it. */
-  const publish = useCallback(async (blob: Blob, fileName: string) => {
-    const entry: PendingExport = { blob, fileName, title: projectRef.current.name, createdAt: Date.now() };
+  const publish = useCallback(async (blob: Blob, fileName: string, opfsName?: string) => {
+    const entry: PendingExport = { blob, fileName, title: projectRef.current.name, createdAt: Date.now(), opfsName };
     const ok = await savePendingExport(entry);
     if (!ok) toast.warning("Couldn't save the export in this browser. Stay on this page until publishing finishes.");
     setPending(entry);
@@ -1017,6 +1025,7 @@ export default function VideoEditor({ preset }: { preset?: EditorPreset } = {}) 
         getBlob={getBlob}
         isAuthenticated={isAuthenticated}
         onPublish={publish}
+        onExported={(opfsName) => pruneExports([opfsName, pendingRef.current?.opfsName])}
       />
       <PublishDialog
         open={publishOpen}

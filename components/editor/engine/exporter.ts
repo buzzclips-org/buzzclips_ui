@@ -7,6 +7,7 @@
 import type { Clip, MediaAsset, Project } from "@/lib/editor/types";
 import { clipDuration, clipStarts, fitRect, outputSize, totalDuration } from "@/lib/editor/timeline";
 import { drawFrame } from "@/lib/editor/render";
+import { createOpfsWritable, deleteOpfsFile, opfsSupported, readOpfsFile } from "./opfs";
 
 export interface ExportProgress {
   phase: "preparing" | "audio" | "video" | "finalizing";
@@ -16,7 +17,10 @@ export interface ExportProgress {
 }
 
 export interface ExportResult {
+  /** Disk-backed File when written to OPFS, otherwise an in-memory Blob. */
   blob: Blob;
+  /** OPFS file name if the export was streamed to disk. */
+  opfsName?: string;
   width: number;
   height: number;
   duration: number;
@@ -80,9 +84,30 @@ export async function exportProject(
   const ctx = canvas.getContext("2d", { alpha: false });
   if (!ctx) throw new Error("Couldn't create a drawing surface for export.");
 
+  // Stream the MP4 straight to an on-disk OPFS file when possible, so the finished video never has
+  // to sit in tab memory (BufferTarget + "in-memory" fast start would hold all of it, then copy it).
+  let opfsName: string | undefined;
+  let target: InstanceType<typeof mb.StreamTarget> | InstanceType<typeof mb.BufferTarget>;
+  if (opfsSupported()) {
+    try {
+      opfsName = `export-${Date.now()}.mp4`;
+      const writable = await createOpfsWritable(opfsName);
+      target = new mb.StreamTarget(writable as unknown as WritableStream<import("mediabunny").StreamTargetChunk>, {
+        chunked: true,
+        chunkSize: 4 * 1024 * 1024,
+      });
+    } catch (err) {
+      console.warn("Editor: OPFS export unavailable, using memory", err);
+      opfsName = undefined;
+      target = new mb.BufferTarget();
+    }
+  } else {
+    target = new mb.BufferTarget();
+  }
   const output = new mb.Output({
-    format: new mb.Mp4OutputFormat({ fastStart: "in-memory" }),
-    target: new mb.BufferTarget(),
+    // Metadata at the end when streaming (no need to buffer); "in-memory" fast start otherwise.
+    format: new mb.Mp4OutputFormat({ fastStart: opfsName ? false : "in-memory" }),
+    target,
   });
   const videoSource = new mb.CanvasSource(canvas, {
     codec: videoCodec,
@@ -102,6 +127,15 @@ export async function exportProject(
 
   try {
     await output.start();
+
+    // Encode audio first: compressed audio is tiny, it lets the muxer stream video straight out
+    // (instead of holding video packets while waiting for audio), and frees the big PCM mix early.
+    if (audioSource && mixed) {
+      onProgress({ phase: "audio", progress: 0.08, message: "Encoding audio…" });
+      await audioSource.add(mixed);
+      audioSource.close();
+      mixed = null;
+    }
 
     // ---------- 3. Video frames ----------
     const totalFrames = Math.max(1, Math.round(total * fps));
@@ -176,21 +210,25 @@ export async function exportProject(
       frameIndex = clipEndFrame;
     }
 
-    if (audioSource && mixed) {
-      onProgress({ phase: "finalizing", progress: 0.96, message: "Encoding audio…" });
-      await audioSource.add(mixed);
-    }
     videoSource.close();
-    audioSource?.close();
 
     onProgress({ phase: "finalizing", progress: 0.98, message: "Finalizing MP4…" });
     await output.finalize();
-    const buffer = output.target.buffer;
-    if (!buffer) throw new Error("Export produced no data.");
+    let blob: Blob;
+    if (opfsName) {
+      const file = await readOpfsFile(opfsName);
+      if (!file || file.size === 0) throw new Error("Export produced no data.");
+      blob = file;
+    } else {
+      const buffer = (output.target as InstanceType<typeof mb.BufferTarget>).buffer;
+      if (!buffer) throw new Error("Export produced no data.");
+      blob = new Blob([buffer], { type: "video/mp4" });
+    }
     onProgress({ phase: "finalizing", progress: 1, message: "Done" });
 
     return {
-      blob: new Blob([buffer], { type: "video/mp4" }),
+      blob,
+      opfsName,
       width,
       height,
       duration: total,
@@ -201,6 +239,7 @@ export async function exportProject(
     if (output.state !== "finalized" && output.state !== "canceled") {
       await output.cancel().catch(() => {});
     }
+    if (opfsName) await deleteOpfsFile(opfsName);
     throw err;
   } finally {
     cleanup();
@@ -222,28 +261,24 @@ async function extractClipAudio(
     if (!track || !(await track.canDecode())) return null;
     const sink = new mb.AudioBufferSink(track);
     const span = clip.out - clip.in;
-    let channels: Float32Array[] | null = null;
-    let rate = 0;
+    // Decode straight into the final AudioBuffer (no intermediate copy of the whole clip).
+    let out: AudioBuffer | null = null;
     for await (const { buffer, timestamp } of sink.buffers(clip.in, clip.out)) {
       if (signal?.aborted) throw abortError();
-      if (!channels) {
-        rate = buffer.sampleRate;
-        const len = Math.max(1, Math.ceil(span * rate));
-        channels = Array.from({ length: Math.min(2, buffer.numberOfChannels) }, () => new Float32Array(len));
+      if (!out) {
+        const len = Math.max(1, Math.ceil(span * buffer.sampleRate));
+        out = ctx.createBuffer(Math.min(2, buffer.numberOfChannels), len, buffer.sampleRate);
       }
-      const offset = Math.round((timestamp - clip.in) * rate);
-      for (let ch = 0; ch < channels.length; ch++) {
+      const offset = Math.round((timestamp - clip.in) * out.sampleRate);
+      for (let ch = 0; ch < out.numberOfChannels; ch++) {
         const src = buffer.getChannelData(Math.min(ch, buffer.numberOfChannels - 1));
-        const dst = channels[ch];
+        const dst = out.getChannelData(ch);
         const srcStart = Math.max(0, -offset);
         const dstStart = Math.max(0, offset);
         const count = Math.min(src.length - srcStart, dst.length - dstStart);
         if (count > 0) dst.set(src.subarray(srcStart, srcStart + count), dstStart);
       }
     }
-    if (!channels) return null;
-    const out = ctx.createBuffer(channels.length, channels[0].length, rate);
-    channels.forEach((data, ch) => out.copyToChannel(data as Float32Array<ArrayBuffer>, ch));
     return out;
   } finally {
     input.dispose();

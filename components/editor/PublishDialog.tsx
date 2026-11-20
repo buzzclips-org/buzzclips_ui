@@ -208,7 +208,7 @@ export function PublishDialog({ open, onOpenChange, video, defaultTitle, beforeA
           <div className="space-y-4">
             <div className="flex gap-3 rounded-xl border border-border/60 bg-muted/30 p-2">
               {previewUrl ? (
-                <video src={previewUrl} muted playsInline className="h-20 w-32 shrink-0 rounded-md bg-black object-contain" />
+                <video src={previewUrl} muted playsInline preload="metadata" className="h-20 w-32 shrink-0 rounded-md bg-black object-contain" />
               ) : (
                 <div className="flex h-20 w-32 items-center justify-center rounded-md bg-muted">
                   <Film className="h-5 w-5 text-muted-foreground" />

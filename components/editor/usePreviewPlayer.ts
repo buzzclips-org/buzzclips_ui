@@ -25,7 +25,9 @@ export function useTime(store: TimeStore): number {
   return useSyncExternalStore(store.subscribe, store.get, () => 0);
 }
 
-const PREVIEW_MAX_EDGE = 1280;
+/** Preview canvas size cap. Low-memory devices (navigator.deviceMemory ≤ 4 GB) get a lighter preview. */
+const PREVIEW_MAX_EDGE =
+  typeof navigator !== "undefined" && ((navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8) <= 4 ? 854 : 1280;
 
 type MediaEl = HTMLVideoElement | HTMLImageElement;
 
@@ -43,7 +45,10 @@ export function usePreviewPlayer(
   const activeClipRef = useRef<string | null>(null);
   const activeVideoRef = useRef<HTMLVideoElement | null>(null);
   const lastTickRef = useRef<number>(0);
+  /** Redraw needed while paused (seek, edit, media loaded). Avoids re-compositing 60×/s when idle. */
+  const dirtyRef = useRef(true);
 
+  if (projectRef.current !== project) dirtyRef.current = true;
   projectRef.current = project;
 
   // Create/destroy media elements as assets come and go.
@@ -54,13 +59,20 @@ export function usePreviewPlayer(
       if (!url || els.has(asset.id) || asset.kind === "audio") continue;
       if (asset.kind === "video") {
         const v = document.createElement("video");
+        // Only buffer metadata up front; the active/next clip is upgraded to "auto" on demand.
+        // Buffering every imported video at once is what used to balloon tab memory.
+        v.preload = "metadata";
         v.src = url;
-        v.preload = "auto";
+        const markDirty = () => (dirtyRef.current = true);
+        v.addEventListener("loadeddata", markDirty);
+        v.addEventListener("seeked", markDirty);
         v.playsInline = true;
         (v as HTMLVideoElement & { preservesPitch?: boolean }).preservesPitch = false;
         els.set(asset.id, v);
       } else {
         const img = new Image();
+        img.decoding = "async";
+        img.onload = () => (dirtyRef.current = true);
         img.src = url;
         els.set(asset.id, img);
       }
@@ -125,6 +137,7 @@ export function usePreviewPlayer(
       const total = totalDuration(projectRef.current.clips);
       store.set(Math.min(Math.max(0, t), total));
       activeClipRef.current = null;
+      dirtyRef.current = true;
     },
     [store]
   );
@@ -147,8 +160,16 @@ export function usePreviewPlayer(
 
       if (activeVideoRef.current && activeVideoRef.current !== video) {
         activeVideoRef.current.pause();
+        dirtyRef.current = true;
       }
       activeVideoRef.current = video;
+      if (video && video.preload !== "auto") video.preload = "auto";
+      // Warm up the next clip so the cut is seamless, without buffering everything else.
+      if (hit && playingRef.current) {
+        const next = p.clips[hit.index + 1];
+        const nextEl = next ? elementsRef.current.get(next.assetId) : undefined;
+        if (nextEl instanceof HTMLVideoElement && nextEl.preload !== "auto") nextEl.preload = "auto";
+      }
 
       const fade = fadeAmount(t, total, p.settings.fadeIn, p.settings.fadeOut);
 
@@ -209,8 +230,10 @@ export function usePreviewPlayer(
         }
       }
 
-      // Draw.
-      if (canvas) {
+      // Draw (always while playing; while paused only when something changed).
+      const needsDraw = playingRef.current || dirtyRef.current || Boolean(video?.seeking);
+      if (canvas && needsDraw) {
+        dirtyRef.current = false;
         const ctx = canvas.getContext("2d");
         if (ctx) {
           const out = outputSize(p.settings.aspect, p.settings.resolution);

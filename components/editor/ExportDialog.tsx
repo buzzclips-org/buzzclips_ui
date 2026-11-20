@@ -27,10 +27,12 @@ interface ExportDialogProps {
   project: Project;
   getBlob: (assetId: string) => Blob | undefined;
   isAuthenticated: boolean;
-  onPublish: (blob: Blob, fileName: string) => void;
+  onPublish: (blob: Blob, fileName: string, opfsName?: string) => void;
+  /** Called after a successful export (used to clean up older exports on disk). */
+  onExported?: (opfsName?: string) => void;
 }
 
-export function ExportDialog({ open, onOpenChange, project, getBlob, isAuthenticated, onPublish }: ExportDialogProps) {
+export function ExportDialog({ open, onOpenChange, project, getBlob, isAuthenticated, onPublish, onExported }: ExportDialogProps) {
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const abortRef = useRef<AbortController | null>(null);
   const urlRef = useRef<string | null>(null);
@@ -96,6 +98,7 @@ export function ExportDialog({ open, onOpenChange, project, getBlob, isAuthentic
       const url = URL.createObjectURL(result.blob);
       urlRef.current = url;
       setStatus({ kind: "done", result, url, seconds: (performance.now() - startedAt) / 1000 });
+      onExported?.(result.opfsName);
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") {
         setStatus({ kind: "idle" });
@@ -185,7 +188,7 @@ export function ExportDialog({ open, onOpenChange, project, getBlob, isAuthentic
 
         {status.kind === "done" && (
           <div className="space-y-3">
-            <video src={status.url} controls playsInline className="max-h-[45vh] w-full rounded-lg bg-black" />
+            <video src={status.url} controls playsInline preload="metadata" className="max-h-[45vh] w-full rounded-lg bg-black" />
             <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
               {fileName} · {formatBytes(status.result.blob.size)} · {status.result.width}×{status.result.height}
@@ -223,7 +226,7 @@ export function ExportDialog({ open, onOpenChange, project, getBlob, isAuthentic
               <Button variant="outline" onClick={download} className="gap-1.5">
                 <Download className="h-4 w-4" /> Download MP4
               </Button>
-              <Button onClick={() => onPublish(status.result.blob, fileName)} className="gap-1.5">
+              <Button onClick={() => onPublish(status.result.blob, fileName, status.result.opfsName)} className="gap-1.5">
                 {isAuthenticated ? <UploadCloud className="h-4 w-4" /> : <LogIn className="h-4 w-4" />}
                 Publish to BuzzClips
               </Button>
