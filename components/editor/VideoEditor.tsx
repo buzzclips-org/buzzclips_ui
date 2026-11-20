@@ -59,6 +59,7 @@ import { PublishDialog, type PublishVideo } from "./PublishDialog";
 import { ShortcutsDialog } from "./ShortcutsDialog";
 import { usePreviewPlayer } from "./usePreviewPlayer";
 import { getMediaInsight, type MediaInsight } from "./engine/insights";
+import { opfsSupported } from "./engine/opfs";
 import { ACCEPTED_TYPES, getBrowserSupport, probeFile } from "./engine/probe";
 import {
   clearMedia,
@@ -129,6 +130,26 @@ export default function VideoEditor({ preset }: { preset?: EditorPreset } = {}) 
   const usedIds = useMemo(() => new Set(project.clips.map((c) => c.assetId)), [project.clips]);
 
   useEffect(() => setSupport(getBrowserSupport()), []);
+
+  // Older browsers can edit, but without on-disk storage (OPFS) media and exports stay in memory.
+  const [showUpgradeHint, setShowUpgradeHint] = useState(false);
+  useEffect(() => {
+    let dismissed = false;
+    try {
+      dismissed = localStorage.getItem("buzzclips-editor-upgrade-hint") === "dismissed";
+    } catch {
+      // ignore
+    }
+    if (!opfsSupported() && !dismissed) setShowUpgradeHint(true);
+  }, []);
+  const dismissUpgradeHint = () => {
+    setShowUpgradeHint(false);
+    try {
+      localStorage.setItem("buzzclips-editor-upgrade-hint", "dismissed");
+    } catch {
+      // ignore
+    }
+  };
 
   /* ------------------------------ history ------------------------------ */
 
@@ -297,6 +318,13 @@ export default function VideoEditor({ preset }: { preset?: EditorPreset } = {}) 
       for (const file of files) {
         try {
           if (file.size > MAX_IMPORT_BYTES) throw new Error(`"${file.name}" is larger than 4 GB, which is too big to edit in a browser.`);
+          if (!opfsSupported() && file.size > 200 * 1024 * 1024 && !storageWarned.current) {
+            storageWarned.current = true;
+            toast.warning("Large file on an older browser", {
+              description: "This browser keeps media in memory, so big videos may be slow or fail to export. Update to the latest Chrome, Edge, Firefox or Safari 18.4+.",
+              duration: 10000,
+            });
+          }
           const asset = await probeFile(file);
           registerBlob(asset.id, file);
           saveMedia(asset.id, file).then((res) => {
@@ -880,6 +908,22 @@ export default function VideoEditor({ preset }: { preset?: EditorPreset } = {}) 
           <Lightbulb className="h-3.5 w-3.5 shrink-0 text-amber-500" />
           <span className="flex-1">{preset.hint}</span>
           <button type="button" onClick={() => setShowHint(false)} aria-label="Dismiss tip" className="rounded p-0.5 text-muted-foreground hover:text-foreground">
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+
+      {support.ok && showUpgradeHint && (
+        <div role="status" className="flex items-start gap-2 border-b border-amber-500/40 bg-amber-500/10 px-4 py-2 text-xs">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+          <span className="flex-1 leading-relaxed">
+            <strong>Update your browser for the best experience.</strong> This browser can&apos;t store media on disk, so
+            longer videos use much more memory and may slow down or fail to export. Please use the latest{" "}
+            <a href="https://www.google.com/chrome/" target="_blank" rel="noopener noreferrer" className="font-medium underline">Chrome</a>,{" "}
+            <a href="https://www.microsoft.com/edge" target="_blank" rel="noopener noreferrer" className="font-medium underline">Edge</a>,{" "}
+            <a href="https://www.mozilla.org/firefox/new/" target="_blank" rel="noopener noreferrer" className="font-medium underline">Firefox</a> or Safari 18.4+.
+          </span>
+          <button type="button" onClick={dismissUpgradeHint} aria-label="Dismiss browser warning" className="rounded p-0.5 text-muted-foreground hover:text-foreground">
             <X className="h-3.5 w-3.5" />
           </button>
         </div>

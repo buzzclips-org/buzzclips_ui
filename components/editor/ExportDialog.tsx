@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { exportProject, type ExportProgress, type ExportResult } from "./engine/exporter";
+import { opfsSupported } from "./engine/opfs";
 
 type Status =
   | { kind: "idle" }
@@ -163,6 +164,15 @@ export function ExportDialog({ open, onOpenChange, project, getBlob, isAuthentic
                 </div>
               ))}
             </dl>
+            {!opfsSupported() && (
+              <p className="flex gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 p-2 text-[11px]">
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-500" />
+                <span>
+                  Your browser will build this video in memory. For long or 1080p videos, use the latest Chrome, Edge,
+                  Firefox or Safari 18.4+ to avoid running out of memory.
+                </span>
+              </p>
+            )}
             <p className="text-[11px] text-muted-foreground">
               Keep this tab open and visible while exporting. Longer and higher-resolution videos take more time; change
               quality in the Project tab.
